@@ -7,8 +7,6 @@ import { fileURLToPath } from 'url';
 import { serve, setup } from 'swagger-ui-express';
 import expressLogger from './utils/logger.js';
 import authRoute from './routes/auth.route.js';
-import templateRouter from './routes/template.route.js';
-import listRouter from './routes/list.route.js';
 const PORT = 3000;
 configDotenv();
 
@@ -34,7 +32,6 @@ app.use(expressLogger)
 // Routes middleware
 app.use('/auth',authRoute);
 app.use('/api-doc', serve, setup(swaggerDocument))
-app.use('/list', listRouter)
 
 // start server
 const start = async () => {
