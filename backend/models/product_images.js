@@ -31,7 +31,7 @@ export default class product_images extends Model {
     sequelize,
     tableName: 'product_images',
     schema: 'public',
-    timestamps: true,
+    timestamps: false,
     indexes: [
       {
         name: "product_images_pkey",

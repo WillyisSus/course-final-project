@@ -29,8 +29,8 @@ CREATE TABLE users (
     seller_exp_date TIMESTAMP WITH TIME ZONE, -- Hết hạn quyền seller thì quay về bidder
     
     -- Denormalization: Lưu sẵn điểm đánh giá để query nhanh (Rule > 80%)
-    rating_score INT DEFAULT 0, -- Tổng điểm (+1 hoặc -1)
-    rating_count INT DEFAULT 0, -- Tổng số lượt đánh giá
+    positive_rating INT DEFAULT 0, -- Tổng số lượt đánh giá tốt (+1)
+    negative_rating INT DEFAULT 0, -- Tổng số lượt đánh giá xấu (-1)
     
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -63,7 +63,7 @@ CREATE TABLE products (
     start_date TIMESTAMP WITH TIME ZONE NOT NULL,
     end_date TIMESTAMP WITH TIME ZONE NOT NULL,
     
-    is_auto_extend BOOLEAN DEFAULT TRUE, -- Tự động gia hạn
+    is_auto_extend BOOLEAN DEFAULT FALSE, -- Tự động gia hạn
     status product_status DEFAULT 'ACTIVE',
     
     -- Cột vector phục vụ Full-text Search Tiếng Việt

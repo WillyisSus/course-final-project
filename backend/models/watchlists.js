@@ -26,7 +26,7 @@ export default class watchlists extends Model {
     sequelize,
     tableName: 'watchlists',
     schema: 'public',
-    timestamps: true,
+    timestamps: false,
     indexes: [
       {
         name: "watchlists_pkey",

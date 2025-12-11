@@ -36,7 +36,7 @@ export default class auto_bids extends Model {
     sequelize,
     tableName: 'auto_bids',
     schema: 'public',
-    timestamps: true,
+    timestamps: false,
     indexes: [
       {
         name: "auto_bids_pkey",

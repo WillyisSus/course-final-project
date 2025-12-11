@@ -46,7 +46,7 @@ export default class feedbacks extends Model {
     sequelize,
     tableName: 'feedbacks',
     schema: 'public',
-    timestamps: true,
+    timestamps: false,
     indexes: [
       {
         name: "feedbacks_pkey",

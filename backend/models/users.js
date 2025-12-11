@@ -57,12 +57,12 @@ export default class users extends Model {
       type: DataTypes.DATE,
       allowNull: true
     },
-    rating_score: {
+    positive_rating: {
       type: DataTypes.INTEGER,
       allowNull: true,
       defaultValue: 0
     },
-    rating_count: {
+    negative_rating: {
       type: DataTypes.INTEGER,
       allowNull: true,
       defaultValue: 0
@@ -71,7 +71,7 @@ export default class users extends Model {
     sequelize,
     tableName: 'users',
     schema: 'public',
-    timestamps: true,
+    timestamps: false,
     indexes: [
       {
         name: "users_email_key",

@@ -26,7 +26,7 @@ export default class product_descriptions extends Model {
     sequelize,
     tableName: 'product_descriptions',
     schema: 'public',
-    timestamps: true,
+    timestamps: false,
     indexes: [
       {
         name: "product_descriptions_pkey",

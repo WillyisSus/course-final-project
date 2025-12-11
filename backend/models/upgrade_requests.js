@@ -31,7 +31,7 @@ export default class upgrade_requests extends Model {
     sequelize,
     tableName: 'upgrade_requests',
     schema: 'public',
-    timestamps: true,
+    timestamps: false,
     indexes: [
       {
         name: "upgrade_requests_pkey",

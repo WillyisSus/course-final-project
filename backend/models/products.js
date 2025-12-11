@@ -65,7 +65,7 @@ export default class products extends Model {
     is_auto_extend: {
       type: DataTypes.BOOLEAN,
       allowNull: true,
-      defaultValue: true
+      defaultValue: false
     },
     status: {
       type: DataTypes.ENUM("ACTIVE","SOLD","EXPIRED"),
@@ -81,7 +81,7 @@ export default class products extends Model {
     tableName: 'products',
     schema: 'public',
     hasTrigger: true,
-    timestamps: true,
+    timestamps: false,
     indexes: [
       {
         name: "idx_products_category",
