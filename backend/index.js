@@ -7,6 +7,7 @@ import { fileURLToPath } from 'url';
 import { serve, setup } from 'swagger-ui-express';
 import expressLogger from './utils/logger.js';
 import authRoute from './routes/auth.route.js';
+import productRouter from './routes/product.route.js';
 const PORT = 3000;
 configDotenv();
 
@@ -24,15 +25,17 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-
+app.get('/', (req, res) => {
+    res.send('Hello World!');
+})
 // Logger middleware
 app.use(expressLogger)
 
 
 // Routes middleware
-app.use('/auth',authRoute);
-app.use('/api-doc', serve, setup(swaggerDocument))
-
+app.use('/api/auth',authRoute);
+app.use('/api/api-doc', serve, setup(swaggerDocument))
+app.use('/api/products', productRouter);
 // start server
 const start = async () => {
   try {
