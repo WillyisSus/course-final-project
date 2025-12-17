@@ -76,7 +76,23 @@ const productController = {
         catch (error) {
             res.status(500).send({message: "Internal server error"})
         }
-    }
+    },
+    deleteOneProduct: async (req, res) => {
+        try {
+            const {id} = req.params;
+            const deleted = await models.products.destroy({
+                where: {id: id}
+            });
+            if (deleted) {
+                return res.json({message: "Product deleted"});
+            } else {
+                return res.status(404).send({message: "Product not found"});
+            }
+        } catch (error) {
+            res.status(500).send({message: "Internal server error"})
+        }
+    },
+    
 }
 
 export default productController;

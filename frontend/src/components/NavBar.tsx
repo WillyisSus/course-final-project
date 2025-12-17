@@ -23,11 +23,6 @@ function NavBar() {
                         <Link to={"/"}>Your Profile</Link>
                     </NavigationMenuLink>
                 </NavigationMenuItem>
-                <NavigationMenuItem>
-                    <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
-                        <Link to={"/ToDo"}>WL's ToDo</Link>
-                    </NavigationMenuLink>
-                </NavigationMenuItem>
             </NavigationMenuList>
         </NavigationMenu>
         

@@ -24,7 +24,7 @@ const authController = {
         }
     },
 
-    login: async (req, res) => {
+    loginUser: async (req, res) => {
         try {
            validate(userSchema)(req, res, async () => {
                 const {username, password} = req.body;
