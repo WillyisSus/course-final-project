@@ -1,7 +1,9 @@
 import models from "../utils/db.js";
 import * as z from "zod";
+import { ProductService } from "../services/product.service.js";
+import { validate } from "../utils/validator.js";
 
-const createProductSchema = z.object({
+export const createProductSchema = z.object({
     seller_id: z.number().int().positive(),
     category_id: z.number().int().positive(),
     name: z.string().min(1).max(255),
@@ -23,18 +25,7 @@ const createProductSchema = z.object({
 const productController = {
     getAllProducts: async (req, res) => {
         try {
-            const products = await models.products.findAll({
-                include: [{
-                    model: models.product_images,
-                    as: 'product_images',
-                    required: false,
-                    where: { is_primary: true }
-                },{
-                    model: models.product_descriptions,
-                    as: 'product_descriptions',
-                    required: false,
-                }]
-            })
+            const products = await ProductService.findActiveProducts();
             res.json({message: `Found ${products.length} products`, data: products})
         } catch (error) {
             res.status(500).send({message: "Internal server error"})
@@ -44,17 +35,7 @@ const productController = {
     getProductById: async (req, res) => {
         try {
             const {id} = req.params;
-            const product = await models.products.findByPk(id, {
-                include: [{
-                    model: models.product_images,
-                    as: 'product_images',
-                    required: false,
-                },{
-                    model: models.product_descriptions,
-                    as: 'product_descriptions',
-                    required: false,
-                }]
-            })
+            const product = await ProductService.findProductDetail(id);
             if (!product) {
                 return res.status(404).send({message: "Product not found"})
             }
@@ -67,8 +48,7 @@ const productController = {
         try {
             const body = req.body;
             if (body){
-                const parsedData = createProductSchema.parse(body);
-                const newProduct = await models.products.create(parsedData);
+                const newProduct = await ProductService.createProduct(body);
                 return res.status(201).json({message: "Product created", data: newProduct});
             }
             res.status(400).send({message: "Bad request"})
@@ -92,6 +72,7 @@ const productController = {
             res.status(500).send({message: "Internal server error"})
         }
     },
+    
     
 }
 

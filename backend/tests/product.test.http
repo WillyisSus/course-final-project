@@ -1,0 +1,65 @@
+@baseUrl = http://localhost:3000/api/products
+@authToken = YOUR_ACCESS_TOKEN_HERE
+
+### 1. Get Active Products
+# Testing findActiveProducts
+# Should return a list of products with status 'ACTIVE' and future end_date
+GET {{baseUrl}}?limit=5&offset=0
+Content-Type: application/json
+
+### 2. Get Product Detail
+# Testing findProductDetail
+# Replace '1' with a valid product_id from your database
+GET {{baseUrl}}/1
+Content-Type: application/json
+
+### 3. Create a New Product
+# Testing createProduct
+# I'm setting the end_date to the future so it shows up in active lists
+POST {{baseUrl}}
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "name": "Gaming Laptop 2024",
+    "category_id": 1,
+    "price_start": 500.00,
+    "price_step": 10.00,
+    "price_buy_now": 1200.00,
+    "start_date": "2023-10-27T10:00:00Z",
+    "end_date": "2025-12-31T10:00:00Z",
+    "is_auto_extend": true
+}
+
+### 4. Block a Bidder
+# Testing blockBidder
+# Replace '1' with the product_id I created above
+# Replace 'userIdToBlock' with an actual user_id from the 'users' table
+POST {{baseUrl}}/1/block
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "userIdToBlock": 5,
+    "reason": "Non-payment history"
+}
+
+### 5. Update Product
+# Testing updateProduct
+# I can only update this if no bids have been placed yet.
+# Changing the start price and name.
+PATCH {{baseUrl}}/1
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+    "name": "Gaming Laptop 2024 - Upgraded RAM",
+    "price_start": 550.00
+}
+
+### 6. Delete Product
+# Testing deleteProduct
+# This should hard delete the row, but only if no bids exist.
+DELETE {{baseUrl}}/1
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
