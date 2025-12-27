@@ -8,7 +8,7 @@ export const CategoryService = {
       include: [
         {
           model: models.categories,
-          as: 'categories', // Fetching sub-categories
+          as: 'sub_categories', // Fetching sub-categories
           attributes: ['category_id', 'name']
         }
       ],

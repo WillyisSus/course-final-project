@@ -1,78 +1,136 @@
-import models from "../utils/db.js";
-import * as z from "zod";
 import { ProductService } from "../services/product.service.js";
-import { validate } from "../utils/validator.js";
-
-export const createProductSchema = z.object({
-    seller_id: z.number().int().positive(),
-    category_id: z.number().int().positive(),
-    name: z.string().min(1).max(255),
-    price_start: z.number().positive(),
-    price_step: z.number().positive(),
-    price_buy_now: z.number().positive().optional(),
-    start_date: z.iso.datetime().or(z.date()),
-    end_date: z.iso.datetime().or(z.date()),
-    is_auto_extend: z.boolean().optional().default(false)
-}).refine((data) => {
-    const start = new Date(data.start_date);
-    const end = new Date(data.end_date);
-    return end > start;
-}, {
-    message: "end_date must be after start_date",
-    path: ["end_date"]
-});
-
+import { ProductImageService } from "../services/productImages.service.js";
 const productController = {
-    getAllProducts: async (req, res) => {
+    // GET /api/products
+    getAll: async (req, res) => {
         try {
-            const products = await ProductService.findActiveProducts();
-            res.json({message: `Found ${products.length} products`, data: products})
-        } catch (error) {
-            res.status(500).send({message: "Internal server error"})
-            console.error(error);
-        }
-    },
-    getProductById: async (req, res) => {
-        try {
-            const {id} = req.params;
-            const product = await ProductService.findProductDetail(id);
-            if (!product) {
-                return res.status(404).send({message: "Product not found"})
-            }
-            res.json({message: "Product found", data: product})
-        } catch (error) {
-            res.status(500).send({message: "Internal server error"})
-        }
-    },
-    postOneProduct: async (req, res) => {
-        try {
-            const body = req.body;
-            if (body){
-                const newProduct = await ProductService.createProduct(body);
-                return res.status(201).json({message: "Product created", data: newProduct});
-            }
-            res.status(400).send({message: "Bad request"})
-        }
-        catch (error) {
-            res.status(500).send({message: "Internal server error"})
-        }
-    },
-    deleteOneProduct: async (req, res) => {
-        try {
-            const {id} = req.params;
-            const deleted = await models.products.destroy({
-                where: {id: id}
+            // Extract pagination from query (validated by your new validator middleware)
+            const limit = parseInt(req.query.limit) || 10;
+            const offset = parseInt(req.query.offset) || 0;
+
+            const products = await ProductService.findActiveProducts({ limit, offset });
+            
+            res.json({ 
+                message: "Active products retrieved successfully", 
+                data: products 
             });
-            if (deleted) {
-                return res.json({message: "Product deleted"});
-            } else {
-                return res.status(404).send({message: "Product not found"});
-            }
         } catch (error) {
-            res.status(500).send({message: "Internal server error"})
+            res.status(500).json({ message: error.message || "Internal Server Error" });
+        }
+    },
+
+    // GET /api/products/:id
+    getOne: async (req, res) => {
+        try {
+            const product = await ProductService.findProductDetail(req.params.id);
+            res.json({ 
+                message: "Product details retrieved", 
+                data: product 
+            });
+        } catch (error) {
+            // differentiating 404 vs 500
+            const status = error.message === 'Product not found' ? 404 : 500;
+            res.status(status).json({ message: error.message });
+        }
+    },
+
+    // POST /api/products
+    postOne: async (req, res) => {
+    try {
+        const sellerId = req.user?.user_id || 1; // From auth middleware, default to 1 for testing
+        
+        // 1. Validation Check 
+        // Ensure files exist if your logic requires them
+        if (!req.files || req.files.length === 0) {
+            return res.status(400).json({ message: "At least one product image is required." });
+        }
+
+        if (req.files.length > 4) {
+            return res.status(400).json({ message: "Maximum 4 images allowed." });
+        }
+
+        // 2. Create Product Record
+        // Multer has already populated req.body with the text fields
+        const newProduct = await ProductService.createProduct(req.body, sellerId);
+        
+        // 3. Store Images Logic
+        // We iterate over the files Multer saved
+        const imagePromises = req.files.map((file, index) => {
+            // Construct the URL/Path. 
+            // If serving statically, it might look like: "http://localhost:3000/images/filename.jpg"
+            // For now, we save the relative path or filename.
+            const imageUrl = `/images/${file.filename}`;
+            
+            // Logic: First image is primary, others are not
+            const isPrimary = index === 0;
+
+            return ProductImageService.createImage(
+            newProduct.product_id, 
+            sellerId, 
+            imageUrl, 
+            isPrimary
+            );
+        });
+
+        // Wait for all images to be saved in DB
+        await Promise.all(imagePromises);
+
+        // 4. Return success
+        res.status(201).json({ 
+            message: "Product and images created successfully", 
+            data: newProduct 
+        });
+
+        } catch (error) {
+        // Clean up: If DB insert fails, we should delete the uploaded files to save space
+        if (req.files) {
+            // fs.unlink logic can be added here
+        }
+        res.status(500).json({ message: error.message });
+        }
+    },
+
+    // PUT /api/products/:id
+    putOne: async (req, res) => {
+        try {
+            const sellerId = req.user.user_id;
+            const updatedProduct = await ProductService.updateProduct(req.params.id, sellerId, req.body);
+
+            res.json({ 
+                message: "Product updated successfully", 
+                data: updatedProduct 
+            });
+        } catch (error) {
+            const status = error.message.includes('Unauthorized') ? 403 : 500;
+            res.status(status).json({ message: error.message });
+        }
+    },
+
+    // DELETE /api/products/:id
+    deleteOne: async (req, res) => {
+        try {
+            const sellerId = req.user.user_id;
+            await ProductService.deleteProduct(req.params.id, sellerId);
+
+            res.json({ message: "Product deleted successfully" });
+        } catch (error) {
+            const status = error.message.includes('Unauthorized') ? 403 : 500;
+            res.status(status).json({ message: error.message });
         }
     },
     
+    // Custom endpoint: POST /api/products/:id/block
+    blockBidder: async (req, res) => {
+        try {
+            const sellerId = req.user.user_id;
+            const { userIdToBlock, reason } = req.body;
+            
+            const result = await ProductService.blockBidder(req.params.id, sellerId, userIdToBlock, reason);
+            res.status(201).json({ message: "User blocked from this product", data: result });
+        } catch (error) {
+            res.status(400).json({ message: error.message });
+        }
+    }
     
 }
 

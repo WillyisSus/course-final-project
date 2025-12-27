@@ -30,7 +30,7 @@ export default function initModels(sequelize) {
   users.belongsToMany(products, { as: 'product_id_products', through: blocked_bidders, foreignKey: "user_id", otherKey: "product_id" });
   users.belongsToMany(products, { as: 'product_id_products_watchlists', through: watchlists, foreignKey: "user_id", otherKey: "product_id" });
   categories.belongsTo(categories, { as: "parent", foreignKey: "parent_id"});
-  categories.hasMany(categories, { as: "categories", foreignKey: "parent_id"});
+  categories.hasMany(categories, { as: "sub_categories", foreignKey: "parent_id"});
   products.belongsTo(categories, { as: "category", foreignKey: "category_id"});
   categories.hasMany(products, { as: "products", foreignKey: "category_id"});
   auto_bids.belongsTo(products, { as: "product", foreignKey: "product_id"});
