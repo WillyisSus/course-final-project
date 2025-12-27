@@ -27,14 +27,14 @@ export const BidService = {
     const step = parseFloat(product.price_step);
     
     // If no bids yet, bid must be >= start_price. Otherwise, >= current_price + step
-    const bidCount = await models.bids.count({ where: { product_id } });
+    // const bidCount = await models.bids.count({ where: { product_id } });
     
     // Logic: First bid must meet start price; subsequent bids must exceed current + step
-    if (bidCount === 0) {
+    // if (bidCount === 0) {
         if (amount < currentPrice) throw new Error(`Bid must be at least starting price: ${currentPrice}`);
-    } else {
-        if (amount < currentPrice + step) throw new Error(`Bid must be at least ${currentPrice + step}`);
-    }
+    // } else {
+    //     if (amount < currentPrice + step) throw new Error(`Bid must be at least ${currentPrice + step}`);
+    // }
 
     // 5. Transaction: Execute the bid safely
     // I am using a managed transaction to ensure all updates happen or none do

@@ -1,5 +1,4 @@
-import { AutoBidService } from '../services/autoBid.service.js';
-
+import AutoBidService from "../services/autobids.service.js";
 const autoBidController = {
     // GET /api/auto-bids?product_id=123
     getAll: async (req, res) => {
@@ -37,7 +36,7 @@ const autoBidController = {
     // POST /api/auto-bids
     postOne: async (req, res) => {
         try {
-            const bidderId = req.user.user_id; // From auth middleware
+            const bidderId = req.user?.user_id || 1; // From auth middleware
             const { product_id, max_price } = req.body;
 
             const newAutoBid = await AutoBidService.createAutoBid(product_id, bidderId, max_price);

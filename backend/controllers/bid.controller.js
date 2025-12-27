@@ -1,4 +1,4 @@
-import { BidService } from '../services/bid.service.js';
+import { BidService } from '../services/bids.service.js';
 
 const bidController = {
     // GET /api/bids?product_id=123
