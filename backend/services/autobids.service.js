@@ -32,14 +32,106 @@ export const AutoBidService = {
     }
 
     // 5. Create the record
-    return await models.auto_bids.create({
+    const newAutoBidRecord = await models.auto_bids.create({
       product_id: productId,
       bidder_id: bidderId,
       max_price: maxPrice
     });
-  },
 
-  // Fetching all auto-bids for a specific product
+    // Start calculating bids based on this new auto-bid
+    await this.calculateAutoBids(productId, bidderId, maxPrice);
+    return newAutoBidRecord;
+  },
+  async calculateAutoBids(productId, newBidderId, maxPrice){
+    return await sequelize.transaction(async (t) => {
+      const product = await models.products.findByPk(productId, {
+          transaction: t,
+          lock: true
+      });
+
+      if (!product) throw new Error("Product not found");
+      // Find current highest bid of product
+      const highestBid = await models.bids.findOne({
+          where: {
+              product_id: productId,
+              status: 'VALID'
+          },
+          order: [['amount', 'DESC']],
+          transaction: t 
+      });
+      // Find max price of old auto-bidder
+      const oldMaxPriceAutoBid = await models.auto_bids.findOne({
+          where: { product_id: productId, bidder_id: bidderId },
+          transaction: t
+      });
+
+      if (oldMaxPriceAutoBid == null) {
+          throw new Error('Old auto-bid not found, something bad happened');
+      }
+      // Start calculating new bids
+      // There is an existing bid, see if we need to outbid
+      // 1. If the new maxPrice is higher than current highest, place a new bid
+      //  1.1 If the new MaxPrice - current MaxPrice > step, outdid by a full step
+      //  1.2 Else, outbid by just enough to match the new maxPrice
+      // 2. If the new maxPrice is lower or equal, add a new the bid record to be the max_price of
+      // the lower highest maxPrice auto-bidder, but the bid holder is still the current highest bidder. 
+      if (highestBid) {
+          if (parseFloat(maxPrice) > parseFloat(oldMaxPriceAutoBid.max_price)) {
+              const newBidAmount = Math.min(
+                  parseFloat(highestBid.amount) + parseFloat(product.price_step),
+                  parseFloat(maxPrice)
+              );
+
+              await models.bids.create({
+                  product_id: productId,
+                  bidder_id: bidderId, 
+                  amount: newBidAmount,
+                  status: 'VALID',
+                  time: new Date()
+              }, { transaction: t }); 
+
+              await product.update({
+                  price_current: newBidAmount,
+                  winner_id: bidderId
+              }, { transaction: t }); 
+
+          } else {
+  
+              const newBidAmount = Math.min(
+                  parseFloat(oldMaxPriceAutoBid.max_price),
+                  parseFloat(maxPrice)
+              );
+
+              await models.bids.create({
+                  product_id: productId,
+                  bidder_id: oldMaxPriceAutoBid.bidder_id, 
+                  amount: newBidAmount,
+                  status: 'VALID',
+                  time: new Date()
+              }, { transaction: t });
+
+              await product.update({
+                  price_current: newBidAmount
+              }, { transaction: t });
+          }
+      } else {
+          const firstBidAmount = product.price_start;
+
+          await models.bids.create({
+              product_id: productId,
+              bidder_id: bidderId,
+              amount: firstBidAmount,
+              status: 'VALID',
+              time: new Date()
+          }, { transaction: t });
+
+          await product.update({
+              price_current: firstBidAmount,
+              winner_id: bidderId
+          }, { transaction: t });
+      }
+    });
+  },
   async findAllAutoBidsOfProduct(productId) {
     return await models.auto_bids.findAll({
       where: { product_id: productId },
@@ -51,6 +143,11 @@ export const AutoBidService = {
         }
       ],
       order: [['max_price', 'DESC']] // Highest max willingness at the top
+    });
+  },
+  async findAutoBidOfUserForProduct(productId, bidderId) {
+    return await models.auto_bids.findOne({
+      where: { product_id: productId, bidder_id: bidderId }
     });
   },
 

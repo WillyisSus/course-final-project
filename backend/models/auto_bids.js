@@ -31,6 +31,11 @@ export default class auto_bids extends Model {
     max_price: {
       type: DataTypes.DECIMAL,
       allowNull: false
+    }, 
+    time:{
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
     }
   }, {
     sequelize,

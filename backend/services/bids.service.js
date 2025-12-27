@@ -31,7 +31,7 @@ export const BidService = {
     
     // Logic: First bid must meet start price; subsequent bids must exceed current + step
     // if (bidCount === 0) {
-        if (amount < currentPrice) throw new Error(`Bid must be at least starting price: ${currentPrice}`);
+        if (amount < currentPrice) throw new Error(`Bid must be greater than current price: ${currentPrice}`);
     // } else {
     //     if (amount < currentPrice + step) throw new Error(`Bid must be at least ${currentPrice + step}`);
     // }
@@ -94,7 +94,15 @@ export const BidService = {
       order: [['amount', 'DESC']] // highest bid first
     });
   },
-
+  async findHighestBidOfProduct(productId) {
+    return await models.bids.findOne({
+      where: {
+        product_id: productId,
+        status: 'VALID'
+      },
+      order: [['amount', 'DESC']]
+    });
+  },
   // Admin-only or special logic: fixing a bid
   async updateBid(bidId, updateData) {
     const bid = await models.bids.findByPk(bidId);

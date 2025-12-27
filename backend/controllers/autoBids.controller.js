@@ -1,4 +1,6 @@
-import AutoBidService from "../services/autobids.service.js";
+import {AutoBidService} from '../services/autobids.service.js';
+import { BidService } from '../services/bids.service.js';
+import { ProductService } from '../services/product.service.js';
 const autoBidController = {
     // GET /api/auto-bids?product_id=123
     getAll: async (req, res) => {
@@ -40,7 +42,10 @@ const autoBidController = {
             const { product_id, max_price } = req.body;
 
             const newAutoBid = await AutoBidService.createAutoBid(product_id, bidderId, max_price);
+            
+            // Get the current highest bid
 
+            const highestBid = await BidService.findHighestBidOfProduct(product_id);
             res.status(201).json({ 
                 message: "Auto-bid configuration created successfully", 
                 data: newAutoBid 
