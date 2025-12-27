@@ -23,7 +23,7 @@ const authController = {
             if (!user) {
                 return res.status(401).send({message: "Invalid username or password"})
             }
-            const validPassword = await bcrypt.compare(password, user.password_hash);
+            const validPassword = await bcrypt.compare(hashedPassword, user.password_hash);
             if (!validPassword) {
                 return res.status(401).send({message: "Invalid username or password"})
             }
