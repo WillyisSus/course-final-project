@@ -9,6 +9,8 @@ import expressLogger from './utils/logger.js';
 import authRoute from './routes/auth.route.js';
 import productRouter from './routes/product.route.js';
 import categoryRouter from './routes/category.route.js';
+import autoBidRouter from './routes/autobids.route.js';
+import bidRouter from './routes/bid.route.js';
 const PORT = 3000;
 configDotenv();
 
@@ -38,6 +40,10 @@ app.use(expressLogger)
 app.use('/api/api-doc', serve, setup(swaggerDocument))
 app.use('/api/products', productRouter);
 app.use('/api/categories', categoryRouter); // new line for category routes
+app.use('/api/auth',authRoute);
+app.use('/api/auto-bids', autoBidRouter);
+app.use('/api/bids', bidRouter);
+
 // start server
 const start = async () => {
   try {

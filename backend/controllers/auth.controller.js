@@ -1,18 +1,9 @@
 import models from "../utils/db.js"
-import * as z from "zod";
 import { validate } from "../utils/validator.js";
 import bcrypt from "bcryptjs";
 import generateToken from "../utils/generateToken.js";
 import jwt from "jsonwebtoken";
-const userSchema = z.object({
-    username: z.string().min(3, {message: "Username must be at least 3 characters long"}),
-    password: z.string().min(6, {message: "Password must be at least 6 characters long"})
-})
-
-const account = {
-    username: "username",
-    password: "password"
-}
+import { UserService } from "../services/user.service.js";
 const authController = {
     // treat this as a User model
     getAllUsers: async (req, res) => {
@@ -26,68 +17,48 @@ const authController = {
 
     loginUser: async (req, res) => {
         try {
-           validate(userSchema)(req, res, async () => {
-                const {username, password} = req.body;
-                // const user = await models.users.findOne({
-                //     where: {
-                //         username: username,
-                //     }
-                // })
-                // if (!user) {
-                //     return res.status(401).send({message: "Invalid username or password"})
-                // }
-                // const validPassword = await bcrypt.compare(password, user.password);
-                // if (!validPassword) {
-                //     return res.status(401).send({message: "Invalid username or password"})
-                // }
-                if (username !== account.username || password !== account.password) {
-                    return res.status(401).send({message: "Invalid username or password"})
-                }
-                const payload = {
-                    userId: username,
-                }
-                const accessToken = await generateToken.generateAccessToken(payload);
-                // const refreshToken = await generateToken.generateRefreshToken(payload);
-            
-                res.status(200).send({message: "Login successful", accessToken})         
-                }       
-            )
+            const {username, password} = req.body;
+            const hashedPassword = await bcrypt.hash(password, 10);
+            const user = UserService.findUserByEmail(username, true);
+            if (!user) {
+                return res.status(401).send({message: "Invalid username or password"})
+            }
+            const validPassword = await bcrypt.compare(password, user.password_hash);
+            if (!validPassword) {
+                return res.status(401).send({message: "Invalid username or password"})
+            }
+            const payload = {
+                userId: user.user_id,
+                role: user.role,
+            }
+            const accessToken = await generateToken.generateAccessToken(payload);
+            const refresh_token = await generateToken.generateRefreshToken(payload);
+            await UserService.updateUser(user.user_id, {refresh_token});
+            res.status(200).send({message: "Login successful", accessToken, id: user.user_id})         
         } catch (error) {
             res.status(500).send({message: "Internal Server error"})
         }
     },
     signUp: async (req, res) => {
         try {
-            validate(userSchema)(req, res, async () => {
-                const {username, password} = req.body;
-                const user = await models.users.findOne({
-                    where: {
-                        username: username,
-                    }
-                })
-                if (user) {
-                    return res.status(401).send({message: "Exisiting username"})
-                }
-                const salt = await bcrypt.genSalt(10);
-                const hashedPassword = await bcrypt.hash(password, salt);
-                const newUSer = models.users.build({username, password: hashedPassword});
-                await newUSer.save();
-                res.status(200).send({message: "Sign up successful"})
-            })
-        } catch (error) {
-            res.status(500).send({message: "Internal Server error"})
-        }
-    },
-    refreshToken: async (req, res) => {
-        try {
-            
+            const {email, password, full_name} = req.body;
+            const hashedPassword = await bcrypt.hash(password, 10);
+            const newUser = await UserService.createUser({
+                email,
+                password_hash: hashedPassword,
+                full_name,
+            });
+            res.status(201).send({message: "User created successfully", data: newUser})
         } catch (error) {
             res.status(500).send({message: "Internal Server error"})
         }
     },
     logout: async (req, res) => {
         try {
-            
+            const userId = req.user.user_id;
+            const refresh_token = null;
+            await UserService.updateUser(userId, {refresh_token});
+            res.status(200).send({message: "Logout successful"})
         } catch (error) {
             res.status(500).send({message: "Internal Server error"})
         }

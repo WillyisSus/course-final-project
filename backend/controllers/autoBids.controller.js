@@ -22,16 +22,18 @@ const autoBidController = {
             res.status(500).json({ message: error.message });
         }
     },
-
-    // GET /api/auto-bids/:id
-    getOne: async (req, res) => {
+    // GET /api/auto-bids?product_id=123
+    getAutoBidOfUserForProduct: async (req, res) => {
         try {
-            // Note: We didn't explicitly create findAutoBidById in the service 
-            // because auto-bids are usually accessed via the Product list.
-            // If you need this, add findAutoBidById to AutoBidService first.
-            res.status(501).json({ message: "Get single auto-bid not implemented yet." });
+            const { product_id} = req.query;
+            const bidderId = req.user.user_id;
+            const autoBids = await AutoBidService.findAutoBidOfUserForProduct(product_id, bidderId);
+            res.json({
+                message: "Auto-bids for user retrieved",
+                data: autoBids
+            });
         } catch (error) {
-            res.status(500).json({ message: "Internal Server Error" });
+            res.status(500).json({ message: error.message });
         }
     },
 
@@ -40,12 +42,7 @@ const autoBidController = {
         try {
             const bidderId = req.user?.user_id || 1; // From auth middleware
             const { product_id, max_price } = req.body;
-
             const newAutoBid = await AutoBidService.createAutoBid(product_id, bidderId, max_price);
-            
-            // Get the current highest bid
-
-            const highestBid = await BidService.findHighestBidOfProduct(product_id);
             res.status(201).json({ 
                 message: "Auto-bid configuration created successfully", 
                 data: newAutoBid 
