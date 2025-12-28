@@ -11,6 +11,8 @@ import productRouter from './routes/product.route.js';
 import categoryRouter from './routes/category.route.js';
 import autoBidRouter from './routes/autobids.route.js';
 import bidRouter from './routes/bid.route.js';
+import productCommentsRouter from './routes/productComments.route.js';
+import messageRouter from './routes/messages.route.js';
 const PORT = 3000;
 configDotenv();
 
@@ -20,7 +22,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // 2. Load and Parse the JSON file manually
-const swaggerFile = fs.readFileSync(path.join(__dirname, './swagger-output.json'));
+const swaggerFile = fs.readFileSync(path.join(__dirname, './swagger-openapi.json'));
 const swaggerDocument = JSON.parse(swaggerFile);
 
 
@@ -37,13 +39,14 @@ app.use(expressLogger)
 
 // Routes middleware
 // app.use('/api/auth',authRoute);
-app.use('/api/api-doc', serve, setup(swaggerDocument))
+app.use('/api-doc', serve, setup(swaggerDocument))
 app.use('/api/products', productRouter);
 app.use('/api/categories', categoryRouter); // new line for category routes
 app.use('/api/auth',authRoute);
 app.use('/api/auto-bids', autoBidRouter);
 app.use('/api/bids', bidRouter);
-
+app.use('/api/comments', productCommentsRouter);
+app.use('/api/messages', messageRouter);
 // start server
 const start = async () => {
   try {

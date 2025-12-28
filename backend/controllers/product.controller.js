@@ -7,9 +7,11 @@ const productController = {
             // Extract pagination from query (validated by your new validator middleware)
             const limit = parseInt(req.query.limit) || 10;
             const offset = parseInt(req.query.offset) || 0;
-
-            const products = await ProductService.findActiveProducts({ limit, offset });
-            
+            const searchQuery = req.query.search || null;
+            const products = await ProductService.findActiveProducts({ limit, offset, searchQuery });
+            if (products.length === 0) {
+                return res.status(404).json({ message: "No active products found" });
+            }
             res.json({ 
                 message: "Active products retrieved successfully", 
                 data: products 

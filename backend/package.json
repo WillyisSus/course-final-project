@@ -24,7 +24,7 @@
   },
   "contributors": [],
   "scripts": {
-    "dev": "node ./utils/swagger.js && nodemon index.js",
+    "dev": "nodemon index.js",
     "test": "",
     "generate-models": "npx sequelize-auto -o \"./models\" -d project-final -h localhost -u myuser -x mypassword -p 5432 -e postgres -l esm "
   },

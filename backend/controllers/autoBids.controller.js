@@ -43,10 +43,18 @@ const autoBidController = {
             const bidderId = req.user?.user_id || 1; // From auth middleware
             const { product_id, max_price } = req.body;
             const newAutoBid = await AutoBidService.createAutoBid(product_id, bidderId, max_price);
-            res.status(201).json({ 
-                message: "Auto-bid configuration created successfully", 
-                data: newAutoBid 
-            });
+            if (newAutoBid){
+                const resData = {};
+                resData.autoBid = newAutoBid;
+                const calculateNewBids = await AutoBidService.calculateAutoBids(product_id, bidderId, max_price);
+                if (calculateNewBids){
+                    resData.bidUpdates = calculateNewBids;
+                }
+                res.status(201).json({ 
+                    message: "Auto-bid configuration created successfully", 
+                    data: resData
+                });
+            }
         } catch (error) {
             // Handle specific business logic errors (like 'Max price too low') with 400
             res.status(400).json({ message: error.message });

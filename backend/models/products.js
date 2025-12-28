@@ -73,8 +73,9 @@ export default class products extends Model {
       defaultValue: "ACTIVE"
     },
     tsv: {
-      type: "TSVECTOR",
-      allowNull: true
+      type: DataTypes.TSVECTOR,
+      allowNull: true,
+      field: 'tsv'
     }
   }, {
     sequelize,

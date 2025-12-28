@@ -51,7 +51,15 @@ export const UserService = {
 
     return await models.users.findOne(options);
   },
-
+  async getRefreshTokenByUserId(userId) {
+    const user = await models.users.findByPk(userId, {
+      attributes: ['refresh_token']
+    });
+    if (!user) {
+      throw new Error('User not found');
+    }
+    return user.refresh_token;
+  },
   // updating profile info like address or full name
   async updateUser(userId, updateData) {
     const user = await models.users.findByPk(userId);

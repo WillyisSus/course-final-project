@@ -1,8 +1,8 @@
 import models from "../utils/db.js"
 import { validate } from "../utils/validator.js";
-import bcrypt from "bcryptjs";
+import bcryptjs from "bcryptjs";
 import generateToken from "../utils/generateToken.js";
-import jwt from "jsonwebtoken";
+import jwt, { decode } from "jsonwebtoken";
 import { UserService } from "../services/user.service.js";
 const authController = {
     // treat this as a User model
@@ -17,18 +17,21 @@ const authController = {
 
     loginUser: async (req, res) => {
         try {
-            const {username, password} = req.body;
-            const hashedPassword = await bcrypt.hash(password, 10);
-            const user = UserService.findUserByEmail(username, true);
-            if (!user) {
+            if (req.error) {
+                throw req.error;
+            }
+            console.log("Login Request Body:", req.body);
+            const {email, password} = req.body;
+            const user = await UserService.findUserByEmail(email, true);
+            if (user==null) {
                 return res.status(401).send({message: "Invalid username or password"})
             }
-            const validPassword = await bcrypt.compare(hashedPassword, user.password_hash);
+            const validPassword = await bcryptjs.compare(password, user.password_hash);
             if (!validPassword) {
                 return res.status(401).send({message: "Invalid username or password"})
             }
             const payload = {
-                userId: user.user_id,
+                user_id: user.user_id,
                 role: user.role,
             }
             const accessToken = await generateToken.generateAccessToken(payload);
@@ -36,6 +39,7 @@ const authController = {
             await UserService.updateUser(user.user_id, {refresh_token});
             res.status(200).send({message: "Login successful", accessToken, id: user.user_id})         
         } catch (error) {
+            console.error("Login Error:", error);
             res.status(500).send({message: "Internal Server error"})
         }
     },
@@ -74,14 +78,39 @@ const authController = {
                 return res.status(401).json({ message: 'Access Denied. Token missing.' });
             }
            
-            jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decodedPayload) => {
+            const {accessError, accessPayload} = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decodedPayload) => {
                 if (err) {
                     console.error("JWT Verification Error:", err);
-                    return res.status(403).json({ message: 'Invalid or expired token.' });
+                    if (err.name === 'TokenExpiredError') {
+                        console.log("Access token has expired.");
+                        decodedPayload = jwt.decode(token);
+                    }
+                    console.log("Decoded Payload:", decodedPayload);
+                    return {accessError: err, accessPayload: decodedPayload};
                 }
                 req.user = decodedPayload;
                 next();
             });
+            if (accessError) {
+                const refreshToken = await UserService.getRefreshTokenByUserId(accessPayload.user_id);
+                const refreshError = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, decoded) => {
+                    if (err) {
+                        console.error("Refresh Token Verification Error:", err);
+                        return err;
+                    }
+                });
+                if (refreshError) {
+                    return res.status(403).json({ message: 'Invalid or expired token. Please login again' });
+                }
+                const newPayload = {
+                    user_id: accessPayload.user_id,
+                    role: accessPayload.role,
+                }
+                const newAccessToken = await generateToken.generateAccessToken(newPayload);
+                res.setHeader('x-access-token', newAccessToken);
+                req.user = newPayload;
+                next();
+            }
         } catch (error) {
             console.error("Error in checkAuth middleware:", error);
             return res.status(500).send({message: "Internal Server error"})

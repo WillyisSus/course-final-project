@@ -1,41 +1,62 @@
 import models from '../utils/db.js'; //
 import { Op } from 'sequelize';
-
+import { sequelize } from '../utils/db.js'; //
 export const ProductService = {
 
   // I'll fetch active products that haven't expired yet for the main list
-  async findActiveProducts({ limit = 10, offset = 0 } = {}) {
+  async findActiveProducts({ limit = 10, offset = 0, searchQuery = null } = {}) {
+    console.log('Search Query:', searchQuery);
+    const whereClause = {
+      status: 'ACTIVE',
+      end_date: {
+        [Op.gt]: new Date() 
+      }
+    };
+
+    let orderClause = [['end_date', 'ASC']];
+
+    if (searchQuery) {
+      // 1. Sanitize input to prevent SQL injection
+      const safeQuery = sequelize.escape(searchQuery);
+      
+      // 2. Full-Text Search Logic
+      // MATCHES TRIGGER: uses 'simple' config and 'unaccent' function
+      whereClause[Op.and] = [
+        sequelize.literal(`tsv @@ plainto_tsquery('simple', unaccent(${safeQuery}))`)
+      ];
+      // 3. Order by Rank (Relevance)
+      // We calculate rank using the exact same logic
+      orderClause = [
+        [sequelize.literal(`ts_rank(tsv, plainto_tsquery('simple', unaccent(${safeQuery})))`), 'DESC'],
+        ['end_date', 'ASC']
+      ];
+    }
     return await models.products.findAll({
-      where: {
-        status: 'ACTIVE', //
-        end_date: {
-          [Op.gt]: new Date() // filter out expired auctions
-        }
-      },
+      where: whereClause,
       attributes: [
         'product_id', 'name', 'price_current', 'price_buy_now', 
-        'end_date', 'start_date', 'created_at'
+        'end_date', 'start_date', 'created_at', 'tsv'
       ],
       include: [
         {
           model: models.categories,
-          as: 'category', //
+          as: 'category',
           attributes: ['name']
         },
         {
           model: models.product_images,
-          as: 'product_images', //
-          where: { is_primary: true }, //
+          as: 'product_images',
+          where: { is_primary: true },
           attributes: ['image_url'],
-          required: false // I want the product even if it has no image
+          required: false 
         },
         {
           model: models.users,
-          as: 'seller', //
+          as: 'seller',
           attributes: ['full_name', 'positive_rating']
         }
       ],
-      order: [['end_date', 'ASC']], // ending soonest first
+      order: orderClause,
       limit,
       offset
     });

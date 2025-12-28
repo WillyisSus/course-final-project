@@ -27,22 +27,12 @@ const generateRefreshToken = async (payload) => {
             process.env.REFRESH_TOKEN_SECRET,
             {expiresIn: "7d"}
         )
-        
         // 1. Find in the database if there is a refresh token record of userID
         // 2. Remove the stored refresh token
         // 3. Store new refresh token in the database
-        // Change logic when using this template in exam
-        const userOldToken = await models.refresh_tokens.findOne({
-            where:{
-                user_id: userId
-            }
-        })
-        if (userOldToken) {
-            await userOldToken.destroy();  
-        }
-        const newToken = models.refresh_tokens.build({user_id: userId, token: refreshToken})
-        await newToken.save();
+        // Change logic when using this template in example
         // Keep this refresh token safe
+        
         return Promise.resolve(refreshToken)
     } catch (error) {
         return Promise.reject(error);

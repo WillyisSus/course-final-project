@@ -1,5 +1,5 @@
 import models from '../utils/db.js'; //
-
+import { sequelize } from '../utils/db.js'; //
 export const AutoBidService = {
 
   // Setting up a proxy bid for a user
@@ -39,10 +39,11 @@ export const AutoBidService = {
     });
 
     // Start calculating bids based on this new auto-bid
-    await this.calculateAutoBids(productId, bidderId, maxPrice);
+
     return newAutoBidRecord;
   },
   async calculateAutoBids(productId, newBidderId, maxPrice){
+    console.log("Calculating auto-bids for product:", productId, "by bidder:", newBidderId, "with max price:", maxPrice);
     return await sequelize.transaction(async (t) => {
       const product = await models.products.findByPk(productId, {
           transaction: t,
@@ -59,15 +60,7 @@ export const AutoBidService = {
           order: [['amount', 'DESC']],
           transaction: t 
       });
-      // Find max price of old auto-bidder
-      const oldMaxPriceAutoBid = await models.auto_bids.findOne({
-          where: { product_id: productId, bidder_id: bidderId },
-          transaction: t
-      });
-
-      if (oldMaxPriceAutoBid == null) {
-          throw new Error('Old auto-bid not found, something bad happened');
-      }
+  
       // Start calculating new bids
       // There is an existing bid, see if we need to outbid
       // 1. If the new maxPrice is higher than current highest, place a new bid
@@ -76,15 +69,24 @@ export const AutoBidService = {
       // 2. If the new maxPrice is lower or equal, add a new the bid record to be the max_price of
       // the lower highest maxPrice auto-bidder, but the bid holder is still the current highest bidder. 
       if (highestBid) {
+          // Find max price of old auto-bidder
+          const oldMaxPriceAutoBid = await models.auto_bids.findOne({
+              where: { product_id: productId, bidder_id: highestBid.bidder_id },
+              transaction: t
+          });
+
+          if (oldMaxPriceAutoBid == null) {
+              throw new Error('Old auto-bid not found, something bad happened');
+          }
           if (parseFloat(maxPrice) > parseFloat(oldMaxPriceAutoBid.max_price)) {
               const newBidAmount = Math.min(
-                  parseFloat(highestBid.amount) + parseFloat(product.price_step),
+                  parseFloat(oldMaxPriceAutoBid.max_price) + parseFloat(product.price_step),
                   parseFloat(maxPrice)
               );
-
+              console.log("Placing new bid of amount:", newBidAmount, " of bidder:", newBidderId);
               await models.bids.create({
                   product_id: productId,
-                  bidder_id: bidderId, 
+                  bidder_id: newBidderId, 
                   amount: newBidAmount,
                   status: 'VALID',
                   time: new Date()
@@ -92,7 +94,7 @@ export const AutoBidService = {
 
               await product.update({
                   price_current: newBidAmount,
-                  winner_id: bidderId
+                  winner_id: newBidderId
               }, { transaction: t }); 
 
           } else {
@@ -102,6 +104,7 @@ export const AutoBidService = {
                   parseFloat(maxPrice)
               );
 
+              console.log("Placing new bid of amount:", newBidAmount, " of bidder:", oldMaxPriceAutoBid.bidder_id);
               await models.bids.create({
                   product_id: productId,
                   bidder_id: oldMaxPriceAutoBid.bidder_id, 
@@ -119,7 +122,7 @@ export const AutoBidService = {
 
           await models.bids.create({
               product_id: productId,
-              bidder_id: bidderId,
+              bidder_id: newBidderId,
               amount: firstBidAmount,
               status: 'VALID',
               time: new Date()
@@ -127,7 +130,7 @@ export const AutoBidService = {
 
           await product.update({
               price_current: firstBidAmount,
-              winner_id: bidderId
+              winner_id: newBidderId
           }, { transaction: t });
       }
     });

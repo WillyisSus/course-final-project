@@ -43,10 +43,7 @@ export const validate = (schemaOrSelector) => async (req, res, next) => {
       return res.status(400).json({
         status: "fail",
         message: "Validation failed",
-        errors: error.errors.map((e) => ({
-          field: e.path.join("."),
-          message: e.message,
-        })),
+        errors: error
       });
     }
     // Pass unexpected errors to the global error handler
