@@ -461,12 +461,13 @@
                     "message": {
                       "type": "string"
                     },
-                    "token": {
+                    "accessToken": {
                       "type": "string",
-                      "description": "JWT authentication token"
+                      "description": "JWT access token for authentication"
                     },
-                    "user": {
-                      "$ref": "#/components/schemas/User"
+                    "id": {
+                      "type": "integer",
+                      "description": "User ID"
                     }
                   }
                 }
@@ -559,7 +560,7 @@
                     "message": {
                       "type": "string"
                     },
-                    "user": {
+                    "data": {
                       "$ref": "#/components/schemas/User"
                     }
                   }
@@ -644,6 +645,76 @@
         }
       }
     },
+    "/api/auth/refreshToken": {
+      "post": {
+        "summary": "Refresh Access Token",
+        "operationId": "refreshToken",
+        "tags": ["Authentication"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "user_id": {
+                    "type": "integer",
+                    "example": 1,
+                    "description": "User ID"
+                  }
+                },
+                "required": ["user_id"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Access token refreshed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "newAccessToken": {
+                      "type": "string",
+                      "description": "New JWT access token"
+                    },
+                    "id": {
+                      "type": "integer",
+                      "description": "User ID"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or expired refresh token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/products/": {
       "get": {
         "summary": "Get All Active Products",
@@ -675,11 +746,40 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Field to sort by (e.g., end_date, price_current)",
+            "schema": {
+              "type": "string",
+              "default": "end_date"
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "description": "Sort order (ASC or DESC)",
+            "schema": {
+              "type": "string",
+              "enum": ["ASC", "DESC"],
+              "default": "ASC"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Product status filter",
+            "schema": {
+              "type": "string",
+              "enum": ["ACTIVE", "ENDED", "SOLD"],
+              "default": "ACTIVE"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Products retrieved successfully",
+            "description": "Active products retrieved successfully",
             "content": {
               "application/json": {
                 "schema": {
@@ -695,6 +795,16 @@
                       }
                     }
                   }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No active products found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
                 }
               }
             }
@@ -782,7 +892,7 @@
         },
         "responses": {
           "201": {
-            "description": "Product created successfully",
+            "description": "Product and images created successfully",
             "content": {
               "application/json": {
                 "schema": {
@@ -800,7 +910,7 @@
             }
           },
           "400": {
-            "description": "Invalid input",
+            "description": "Invalid input or missing/invalid images (1-4 images required)",
             "content": {
               "application/json": {
                 "schema": {
@@ -977,7 +1087,7 @@
             }
           },
           "401": {
-            "description": "Unauthorized",
+            "description": "Unauthorized - Token missing or invalid",
             "content": {
               "application/json": {
                 "schema": {
@@ -987,7 +1097,7 @@
             }
           },
           "403": {
-            "description": "Forbidden",
+            "description": "Forbidden - Only product seller can update",
             "content": {
               "application/json": {
                 "schema": {
@@ -1040,7 +1150,7 @@
             }
           },
           "401": {
-            "description": "Unauthorized",
+            "description": "Unauthorized - Token missing or invalid",
             "content": {
               "application/json": {
                 "schema": {
@@ -1050,7 +1160,7 @@
             }
           },
           "403": {
-            "description": "Forbidden",
+            "description": "Forbidden - Only product seller can delete",
             "content": {
               "application/json": {
                 "schema": {
@@ -1061,6 +1171,103 @@
           },
           "500": {
             "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/products/{id}/block": {
+      "post": {
+        "summary": "Block Bidder from Product",
+        "operationId": "blockBidder",
+        "tags": ["Products"],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Product ID",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userIdToBlock": {
+                    "type": "integer",
+                    "example": 5,
+                    "description": "ID of user to block from bidding"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "example": "Non-payment history",
+                    "description": "Reason for blocking"
+                  }
+                },
+                "required": ["userIdToBlock", "reason"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User blocked from this product",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "description": "Blocked bidder record"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input or blocking failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Token missing or invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Only product seller can block bidders",
             "content": {
               "application/json": {
                 "schema": {

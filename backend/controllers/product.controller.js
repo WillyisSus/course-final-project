@@ -8,7 +8,12 @@ const productController = {
             const limit = parseInt(req.query.limit) || 10;
             const offset = parseInt(req.query.offset) || 0;
             const searchQuery = req.query.search || null;
-            const products = await ProductService.findActiveProducts({ limit, offset, searchQuery });
+            const sortBy = req.query.sort || 'end_date';
+            const sortOrder = req.query.order || 'ASC';
+            
+            // Default to 'ACTIVE' if not provided
+            const status = req.query.status || 'ACTIVE';
+            const products = await ProductService.findAllProducts({ limit, offset, searchQuery, sortBy, sortOrder, status });
             if (products.length === 0) {
                 return res.status(404).json({ message: "No active products found" });
             }
@@ -17,6 +22,7 @@ const productController = {
                 data: products 
             });
         } catch (error) {
+            console.error("Error in getAll:", error);
             res.status(500).json({ message: error.message || "Internal Server Error" });
         }
     },
@@ -30,6 +36,7 @@ const productController = {
                 data: product 
             });
         } catch (error) {
+            console.error("Error in getOne:", error);
             // differentiating 404 vs 500
             const status = error.message === 'Product not found' ? 404 : 500;
             res.status(status).json({ message: error.message });
@@ -84,11 +91,8 @@ const productController = {
         });
 
         } catch (error) {
-        // Clean up: If DB insert fails, we should delete the uploaded files to save space
-        if (req.files) {
-            // fs.unlink logic can be added here
-        }
-        res.status(500).json({ message: error.message });
+            console.error("Error in postOne:", error);
+            res.status(500).json({ message: error.message });
         }
     },
 
@@ -103,6 +107,7 @@ const productController = {
                 data: updatedProduct 
             });
         } catch (error) {
+            console.error("Error in putOne:", error);
             const status = error.message.includes('Unauthorized') ? 403 : 500;
             res.status(status).json({ message: error.message });
         }
@@ -116,6 +121,7 @@ const productController = {
 
             res.json({ message: "Product deleted successfully" });
         } catch (error) {
+            console.error("Error in deleteOne:", error);
             const status = error.message.includes('Unauthorized') ? 403 : 500;
             res.status(status).json({ message: error.message });
         }
@@ -130,6 +136,7 @@ const productController = {
             const result = await ProductService.blockBidder(req.params.id, sellerId, userIdToBlock, reason);
             res.status(201).json({ message: "User blocked from this product", data: result });
         } catch (error) {
+            console.error("Error in blockBidder:", error);
             res.status(400).json({ message: error.message });
         }
     }

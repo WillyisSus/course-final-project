@@ -4,38 +4,54 @@ import { sequelize } from '../utils/db.js'; //
 export const ProductService = {
 
   // I'll fetch active products that haven't expired yet for the main list
-  async findActiveProducts({ limit = 10, offset = 0, searchQuery = null } = {}) {
+  async findAllProducts({ 
+    limit = 10, 
+    offset = 0, 
+    searchQuery = null, 
+    sortBy = 'end_date', 
+    sortOrder = 'ASC',
+    status = 'ACTIVE' // <--- NEW: Defaults to ACTIVE
+  } = {}) {
     console.log('Search Query:', searchQuery);
-    const whereClause = {
-      status: 'ACTIVE',
-      end_date: {
-        [Op.gt]: new Date() 
-      }
-    };
+    const whereClause = {};
 
-    let orderClause = [['end_date', 'ASC']];
+    // Only filter by status if a specific status is requested (pass null to get EVERYTHING)
+    if (status === 'ACTIVE') {
+      whereClause.end_date = { [Op.gt]: new Date() };
+    }
 
+    // 2. Search Logic (Same as before)
     if (searchQuery) {
-      // 1. Sanitize input to prevent SQL injection
       const safeQuery = sequelize.escape(searchQuery);
-      
-      // 2. Full-Text Search Logic
-      // MATCHES TRIGGER: uses 'simple' config and 'unaccent' function
       whereClause[Op.and] = [
-        sequelize.literal(`tsv @@ plainto_tsquery('simple', unaccent(${safeQuery}))`)
+        sequelize.literal(`"products"."tsv" @@ plainto_tsquery('simple', unaccent(${safeQuery}))`)
       ];
-      // 3. Order by Rank (Relevance)
-      // We calculate rank using the exact same logic
-      orderClause = [
-        [sequelize.literal(`ts_rank(tsv, plainto_tsquery('simple', unaccent(${safeQuery})))`), 'DESC'],
-        ['end_date', 'ASC']
+    }
+
+    let orderClause = [];
+    if (sortBy === 'bid_count') {
+      orderClause = [[sequelize.literal('bid_count'), sortOrder]];
+    } else if (searchQuery && sortBy === 'relevance') {
+       const safeQuery = sequelize.escape(searchQuery);
+       orderClause = [
+        [sequelize.literal(`ts_rank("products"."tsv", plainto_tsquery('simple', unaccent(${safeQuery})))`), 'DESC']
       ];
+    } else {
+      orderClause = [[sortBy, sortOrder]];
     }
     return await models.products.findAll({
       where: whereClause,
       attributes: [
         'product_id', 'name', 'price_current', 'price_buy_now', 
-        'end_date', 'start_date', 'created_at', 'tsv'
+        'end_date', 'start_date', 'created_at', 'winner_id', 'status',  // Added status to return attributes
+        [
+          sequelize.literal(`(
+            SELECT COUNT(*)::int 
+            FROM bids 
+            WHERE bids.product_id = products.product_id
+          )`), 
+          'bid_count'
+        ]
       ],
       include: [
         {
@@ -49,6 +65,11 @@ export const ProductService = {
           where: { is_primary: true },
           attributes: ['image_url'],
           required: false 
+        },
+        {
+          model: models.users,
+          as: 'winner',
+          attributes: ['full_name'] 
         },
         {
           model: models.users,

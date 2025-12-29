@@ -37,7 +37,7 @@ const authController = {
             const accessToken = await generateToken.generateAccessToken(payload);
             const refresh_token = await generateToken.generateRefreshToken(payload);
             await UserService.updateUser(user.user_id, {refresh_token});
-            res.status(200).send({message: "Login successful", accessToken, id: user.user_id})         
+            res.status(200).send({message: "Login successful", accessToken, id: user.user_id, role: user.role})         
         } catch (error) {
             console.error("Login Error:", error);
             res.status(500).send({message: "Internal Server error"})
@@ -77,42 +77,42 @@ const authController = {
             if (token == null) {
                 return res.status(401).json({ message: 'Access Denied. Token missing.' });
             }
-           
-            const {accessError, accessPayload} = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decodedPayload) => {
+            jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decodedPayload) => {
                 if (err) {
                     console.error("JWT Verification Error:", err);
                     if (err.name === 'TokenExpiredError') {
                         console.log("Access token has expired.");
-                        decodedPayload = jwt.decode(token);
                     }
-                    console.log("Decoded Payload:", decodedPayload);
-                    return {accessError: err, accessPayload: decodedPayload};
+                    return res.status(401).json({ message: 'Invalid or expired token. Please login again' });
                 }
                 req.user = decodedPayload;
                 next();
             });
-            if (accessError) {
-                const refreshToken = await UserService.getRefreshTokenByUserId(accessPayload.user_id);
-                const refreshError = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, decoded) => {
-                    if (err) {
-                        console.error("Refresh Token Verification Error:", err);
-                        return err;
-                    }
-                });
-                if (refreshError) {
-                    return res.status(403).json({ message: 'Invalid or expired token. Please login again' });
-                }
-                const newPayload = {
-                    user_id: accessPayload.user_id,
-                    role: accessPayload.role,
-                }
-                const newAccessToken = await generateToken.generateAccessToken(newPayload);
-                res.setHeader('x-access-token', newAccessToken);
-                req.user = newPayload;
-                next();
-            }
         } catch (error) {
             console.error("Error in checkAuth middleware:", error);
+            return res.status(500).send({message: "Internal Server error"})
+        }
+    },
+    refreshToken: async (req, res) => {
+        try {
+            const {user_id} = req.body;
+            const refreshToken = await UserService.getRefreshTokenByUserId(user_id);
+            const decodedPayload = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, decoded) => {
+                if (err) {
+                    console.error("Refresh Token Verification Error:", err);
+                    return res.status(401).json({ message: 'Invalid or expired token. Please login again' });
+                }
+                return decoded;
+            });
+            console.log("Decoded Payload from Refresh Token:", decodedPayload);
+            const newPayload = {
+                user_id: decodedPayload.userId,
+                role: decodedPayload.role,
+            }
+            const newAccessToken = await generateToken.generateAccessToken(newPayload);
+            return res.status(200).send({message: "Access Token refreshed sucessfully", accessToken: newAccessToken, id: newPayload.user_id, role: newPayload.role});
+        } catch (error) {
+            console.error("Error in refreshToken:", error);
             return res.status(500).send({message: "Internal Server error"})
         }
     }

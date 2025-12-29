@@ -1,4 +1,5 @@
 import express from 'express';
+import cors from 'cors'; // Import it
 import {sequelize} from './utils/db.js';
 import { configDotenv } from "dotenv";
 import fs from 'fs';
@@ -16,7 +17,6 @@ import messageRouter from './routes/messages.route.js';
 const PORT = 3000;
 configDotenv();
 
-
 // 1. Setup directory paths (Required in ESM to get __dirname behavior)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -27,6 +27,15 @@ const swaggerDocument = JSON.parse(swaggerFile);
 
 
 const app = express();
+
+// --- CORS Configuration ---
+app.use(cors({
+  origin: ["http://localhost:5173", "http://localhost:3000"], // Your Vite frontend URL
+  credentials: true,               // Allow cookies/tokens
+  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allowed methods
+  allowedHeaders: ['Content-Type', 'Authorization'] // Allowed headers
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

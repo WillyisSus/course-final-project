@@ -1,11 +1,32 @@
-import './index.css'
 import { createBrowserRouter } from 'react-router'
 import { RouterProvider } from 'react-router'
 import HomePage from './pages/HomePage'
-const router = createBrowserRouter([{
-    path: "/",
-    Component: HomePage
+import LoginPage from './pages/LoginPage'
+import RegisterPage from './pages/RegisterPage'
+import '@/index.css'
+import NotFoundPage from './pages/NotFoundPage'
+import MainLayout from './layouts/MainLayout'
+const router = createBrowserRouter([
+  {
+    path:"",
+    element: <MainLayout/>,
+    children:[
+       {
+        index: true,
+        Component: HomePage
+      },
+    ]
   },
+  {
+    path: "login",
+    Component: LoginPage
+  },{
+    path: "register",
+    Component: RegisterPage
+  },{
+    path: "*",
+    Component: NotFoundPage
+  }
 
 ])
 function App() {
