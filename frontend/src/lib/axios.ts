@@ -47,7 +47,7 @@ api.interceptors.response.use(
 
         // 2. Update Redux Store
         if (user) {
-            store.dispatch(setCredentials({ user, accessToken: newAccessToken, role: refreshResponse.data.role}) );
+            store.dispatch(setCredentials({ user, accessToken: newAccessToken}) );
         }
 
         // 3. Update the original failed request with the new token

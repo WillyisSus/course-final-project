@@ -37,7 +37,7 @@ const authController = {
             const accessToken = await generateToken.generateAccessToken(payload);
             const refresh_token = await generateToken.generateRefreshToken(payload);
             await UserService.updateUser(user.user_id, {refresh_token});
-            res.status(200).send({message: "Login successful", accessToken, id: user.user_id, role: user.role})         
+            res.status(200).send({message: "Login successful", accessToken, user: {id: user.user_id, role: user.role, email: user.email, full_name: user.full_name}});         
         } catch (error) {
             console.error("Login Error:", error);
             res.status(500).send({message: "Internal Server error"})
@@ -45,15 +45,18 @@ const authController = {
     },
     signUp: async (req, res) => {
         try {
-            const {email, password, full_name} = req.body;
-            const hashedPassword = await bcrypt.hash(password, 10);
+            const {email, password, full_name, dob, address} = req.body;
+            const hashedPassword = await bcryptjs.hash(password, 10);
             const newUser = await UserService.createUser({
                 email,
                 password_hash: hashedPassword,
                 full_name,
+                dob,
+                address
             });
             res.status(201).send({message: "User created successfully", data: newUser})
         } catch (error) {
+            console.error("SignUp Error:", error);
             res.status(500).send({message: "Internal Server error"})
         }
     },
@@ -110,7 +113,7 @@ const authController = {
                 role: decodedPayload.role,
             }
             const newAccessToken = await generateToken.generateAccessToken(newPayload);
-            return res.status(200).send({message: "Access Token refreshed sucessfully", accessToken: newAccessToken, id: newPayload.user_id, role: newPayload.role});
+            return res.status(200).send({message: "Access Token refreshed sucessfully", accessToken: newAccessToken});
         } catch (error) {
             console.error("Error in refreshToken:", error);
             return res.status(500).send({message: "Internal Server error"})

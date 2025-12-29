@@ -1,3 +1,4 @@
+import { useState } from "react"; // Import useState
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useNavigate } from "react-router";
@@ -5,6 +6,7 @@ import { useAppDispatch } from "../store/hooks";
 import { setCredentials } from "../store/slices/authSlice";
 import api from "../lib/axios";
 import { loginSchema, type LoginInput } from "../lib/validators/auth";
+import { Eye, EyeOff } from "lucide-react"; // Import Icons
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +16,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 const LoginPage = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  // State for toggling visibility
+  const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
@@ -24,9 +28,8 @@ const LoginPage = () => {
     try {
       const res = await api.post("/auth/login", data);
       dispatch(setCredentials({
-        user: res.data.id,
+        user: res.data.user,
         accessToken: res.data.accessToken,
-        role: res.data.role
       }));
       navigate("/");
     } catch (error: any) {
@@ -35,9 +38,8 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen w-full bg-gray-50 flex items-center  justify-center p-4">
-      <Card className="w-[40%] min-w-[400px] shadow-xl border-gray-200">
-        
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <Card className="w-[60%] min-w-[400px] shadow-xl border-gray-200">
         <CardHeader className="text-center pb-6">
           <CardTitle className="text-4xl font-bold text-blue-600 mb-2">
             BigBiddie
@@ -75,7 +77,28 @@ const LoginPage = () => {
                       </Link>
                     </div>
                     <FormControl>
-                      <Input type="password" placeholder="••••••" className="h-12 text-base" {...field} />
+                      <div className="relative">
+                        <Input 
+                          // Dynamic Type
+                          type={showPassword ? "text" : "password"} 
+                          placeholder="••••••" 
+                          className="h-12 text-base pr-10" // Add padding right so text doesn't hit the icon
+                          {...field} 
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          onClick={() => setShowPassword((prev) => !prev)}
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-5 w-5 text-gray-400" />
+                          ) : (
+                            <Eye className="h-5 w-5 text-gray-400" />
+                          )}
+                        </Button>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -83,7 +106,7 @@ const LoginPage = () => {
               />
 
               <div className="pt-4 space-y-4">
-                <Button type="submit" variant="default" className="bg-primary w-full h-12 text-lg">
+                <Button type="submit" className="w-full h-12 text-lg bg-blue-600 hover:bg-blue-700 font-bold">
                   Sign In
                 </Button>
                 
@@ -97,7 +120,7 @@ const LoginPage = () => {
                 </div>
 
                 <Button 
-                  variant="secondary" 
+                  variant="outline" 
                   type="button" 
                   className="w-full h-12 text-base"
                   onClick={() => navigate("/register")}
