@@ -7,6 +7,7 @@ import '@/index.css'
 import NotFoundPage from './pages/NotFoundPage'
 import MainLayout from './layouts/MainLayout'
 import VerifyOtpPage from './pages/VerifyOTPPage'
+import ProductListPage from './pages/ProductListPage'
 const router = createBrowserRouter([
   {
     path:"",
@@ -15,7 +16,10 @@ const router = createBrowserRouter([
        {
         index: true,
         Component: HomePage
-      },
+      },{
+        path: "products",
+        Component: ProductListPage
+      }
     ]
   },
   {

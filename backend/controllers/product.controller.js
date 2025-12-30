@@ -4,23 +4,34 @@ const productController = {
     // GET /api/products
     getAll: async (req, res) => {
         try {
-            // Extract pagination from query (validated by your new validator middleware)
             const limit = parseInt(req.query.limit) || 10;
-            const offset = parseInt(req.query.offset) || 0;
-            const searchQuery = req.query.search || null;
-            const sortBy = req.query.sort || 'end_date';
-            const sortOrder = req.query.order || 'ASC';
+            const page = parseInt(req.query.page) || 1;
+            const offset = (page - 1) * limit;
             
-            // Default to 'ACTIVE' if not provided
-            const status = req.query.status || 'ACTIVE';
-            const products = await ProductService.findAllProducts({ limit, offset, searchQuery, sortBy, sortOrder, status });
-            if (products.length === 0) {
-                return res.status(404).json({ message: "No active products found" });
-            }
-            res.json({ 
-                message: "Active products retrieved successfully", 
-                data: products 
+            const filters = {
+                searchQuery: req.query.search || null,
+                sortBy: req.query.sort || 'end_date', 
+                sortOrder: req.query.order || 'ASC', 
+                category: req.query.category || null, 
+                status: req.query.status || 'ACTIVE'
+            };
+            const { count, rows } = await ProductService.findAllProducts({ 
+                limit, 
+                offset, 
+                ...filters 
             });
+
+            res.json({ 
+                message: "Products retrieved successfully", 
+                data: rows,
+                meta: {
+                    total: count,      
+                    page: page,        
+                    limit: limit,       
+                    totalPages: Math.ceil(count / limit)
+                }
+        });
+
         } catch (error) {
             console.error("Error in getAll:", error);
             res.status(500).json({ message: error.message || "Internal Server Error" });

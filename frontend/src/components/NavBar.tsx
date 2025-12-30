@@ -38,7 +38,7 @@ const Navbar = () => {
   // --- Search Logic ---
   const handleSearch = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && searchValue.trim()) {
-      navigate(`/?search=${encodeURIComponent(searchValue)}`);
+      navigate(`/products?search=${encodeURIComponent(searchValue)}`);
     }
   };
   
@@ -93,7 +93,7 @@ const Navbar = () => {
                       <DropdownMenuSubContent className="w-48">
                         {category.sub_categories!.map(child => (
                            <DropdownMenuItem key={child.category_id} asChild>
-                             <Link to={`/?category=${child.category_id}`} className="cursor-pointer w-full block">
+                             <Link to={`/products?category=${child.category_id}`} className="cursor-pointer w-full block">
                                {child.name}
                              </Link>
                            </DropdownMenuItem>
@@ -106,7 +106,7 @@ const Navbar = () => {
                 // CASE 2: Single Category (Leaf)
                 return (
                   <DropdownMenuItem key={category.category_id} asChild>
-                    <Link to={`/?category=${category.category_id}`} className="cursor-pointer w-full block py-2">
+                    <Link to={`/products?category=${category.category_id}`} className="cursor-pointer w-full block py-2">
                       {category.name}
                     </Link>
                   </DropdownMenuItem>

@@ -10,7 +10,8 @@ export const ProductService = {
     searchQuery = null, 
     sortBy = 'end_date', 
     sortOrder = 'ASC',
-    status = 'ACTIVE' // <--- NEW: Defaults to ACTIVE
+    status = 'ACTIVE',
+    category= null // <--- NEW: Defaults to ACTIVE
   } = {}) {
     console.log('Search Query:', searchQuery);
     const whereClause = {};
@@ -27,7 +28,9 @@ export const ProductService = {
         sequelize.literal(`"products"."tsv" @@ plainto_tsquery('simple', unaccent(${safeQuery}))`)
       ];
     }
-
+    if (category){
+      whereClause.category_id = category
+    }
     let orderClause = [];
     if (sortBy === 'bid_count') {
       orderClause = [[sequelize.literal('bid_count'), sortOrder]];
@@ -39,8 +42,11 @@ export const ProductService = {
     } else {
       orderClause = [[sortBy, sortOrder]];
     }
-    return await models.products.findAll({
+    return await models.products.findAndCountAll({
       where: whereClause,
+      order: orderClause,
+      limit,
+      offset,
       attributes: [
         'product_id', 'name', 'price_current', 'price_buy_now', 
         'end_date', 'start_date', 'created_at', 'winner_id', 'status',  // Added status to return attributes
@@ -77,9 +83,7 @@ export const ProductService = {
           attributes: ['full_name', 'positive_rating']
         }
       ],
-      order: orderClause,
-      limit,
-      offset
+     
     });
   },
 
