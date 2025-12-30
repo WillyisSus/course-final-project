@@ -6,6 +6,7 @@ import RegisterPage from './pages/RegisterPage'
 import '@/index.css'
 import NotFoundPage from './pages/NotFoundPage'
 import MainLayout from './layouts/MainLayout'
+import VerifyOtpPage from './pages/VerifyOTPPage'
 const router = createBrowserRouter([
   {
     path:"",
@@ -23,6 +24,9 @@ const router = createBrowserRouter([
   },{
     path: "register",
     Component: RegisterPage
+  },{
+    path: "verify-otp",
+    Component: VerifyOtpPage
   },{
     path: "*",
     Component: NotFoundPage

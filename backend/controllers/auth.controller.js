@@ -4,6 +4,8 @@ import bcryptjs from "bcryptjs";
 import generateToken from "../utils/generateToken.js";
 import jwt, { decode } from "jsonwebtoken";
 import { UserService } from "../services/user.service.js";
+import axios from "axios";
+import {sendEmail, emailTemplates } from "../utils/email.js";
 const authController = {
     // treat this as a User model
     getAllUsers: async (req, res) => {
@@ -37,7 +39,16 @@ const authController = {
             const accessToken = await generateToken.generateAccessToken(payload);
             const refresh_token = await generateToken.generateRefreshToken(payload);
             await UserService.updateUser(user.user_id, {refresh_token});
-            res.status(200).send({message: "Login successful", accessToken, user: {id: user.user_id, role: user.role, email: user.email, full_name: user.full_name}});         
+            res.status(200).send({message: "Login successful", 
+                accessToken, 
+                user: 
+                {
+                    id: user.user_id, 
+                    role: user.role, 
+                    email: user.email, 
+                    full_name: user.full_name, 
+                    is_verified: user.is_verified
+                }});         
         } catch (error) {
             console.error("Login Error:", error);
             res.status(500).send({message: "Internal Server error"})
@@ -45,14 +56,31 @@ const authController = {
     },
     signUp: async (req, res) => {
         try {
-            const {email, password, full_name, dob, address} = req.body;
+            const {email, password, full_name, dob, address, recaptcha_token} = req.body;
+            console.log("SignUp Request Body:", req.body);
+            if (!recaptcha_token) {
+                return res.status(400).json({ message: "Captcha token is missing." });
+            }
+            const googleVerifyUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.GOOGLE_SECRET_KEY}&response=${recaptcha_token}`;
+            const captchaResponse = await axios.post(googleVerifyUrl)
+            if (!captchaResponse.data.success) {
+                return res.status(400).json({ message: "Captcha verification failed. Please try again." });
+            }
+            const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+            const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
             const hashedPassword = await bcryptjs.hash(password, 10);
             const newUser = await UserService.createUser({
                 email,
                 password_hash: hashedPassword,
                 full_name,
                 dob,
-                address
+                address,
+                otp_code: otpCode,
+                otp_expiry: otpExpiry
+            });
+            await sendEmail({
+                to: email,
+                ...emailTemplates.otpVerification(otpCode)
             });
             res.status(201).send({message: "User created successfully", data: newUser})
         } catch (error) {
@@ -72,11 +100,11 @@ const authController = {
     },
     checkAuth: async (req, res, next) => {
         try {
-            console.log
-            const authHeader = req.headers['apikey'];
+            const authHeader = req.headers['authorization'];
+
             console.log("Auth Header:", authHeader)
-            const token = authHeader;
-             console.log("Token:", token)
+            const token = authHeader && authHeader.split(' ')[1];
+            console.log("Token:", token)
             if (token == null) {
                 return res.status(401).json({ message: 'Access Denied. Token missing.' });
             }
@@ -88,6 +116,7 @@ const authController = {
                     }
                     return res.status(401).json({ message: 'Invalid or expired token. Please login again' });
                 }
+                console.log("Decoded Payload checkAuth:", decodedPayload);
                 req.user = decodedPayload;
                 next();
             });
@@ -98,7 +127,16 @@ const authController = {
     },
     refreshToken: async (req, res) => {
         try {
-            const {user_id} = req.body;
+            const authHeader = req.headers['authorization'];
+
+            console.log("Auth Header:", authHeader)
+            const token = authHeader && authHeader.split(' ')[1];
+            console.log("Refresh Token Request Body:", token);   
+            // Find user from expired access token
+            const {user_id} = jwt.decode(token);
+            if (!user_id) {
+                return res.status(401).json({ message: 'Invalid token. User ID missing.' });
+            }
             const refreshToken = await UserService.getRefreshTokenByUserId(user_id);
             const decodedPayload = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, decoded) => {
                 if (err) {
@@ -118,7 +156,67 @@ const authController = {
             console.error("Error in refreshToken:", error);
             return res.status(500).send({message: "Internal Server error"})
         }
-    }
+    },
+    verifyOTP: async (req, res) => {
+        try {
+        const { otp } = req.body;
+        const userId = req.user.user_id; // From JWT Middleware
+        console.log("Verifying OTP for User ID:", userId, "with OTP:", otp);
+        const user = await UserService.findUserById(userId);
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        if (user.is_verified) {
+            return res.status(400).json({ message: "Account already verified" });
+        }
+
+        // Check Logic
+        if (user.otp_code !== otp) {
+            return res.status(400).json({ message: "Invalid OTP code" });
+        }
+
+        if (new Date() > new Date(user.otp_expiry)) {
+            return res.status(400).json({ message: "OTP has expired" });
+        }
+
+        // Success
+        await UserService.updateUser(userId,{
+            is_verified: true,
+            otp_code: null,
+            otp_expiry: null
+        });
+        res.json({ message: "Account verified successfully"});
+
+        } catch (error) {
+        res.status(500).json({ message: error.message });
+        }
+    },
+    sendOtp: async (req, res) => {
+        try {
+        const userId = req.user.user_id; // From JWT Middleware
+        const user = await UserService.findUserById(userId);
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        if (user.is_verified) {
+            return res.status(400).json({ message: "Account already verified" });
+        }
+
+        // Check Logic
+        const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+        await UserService.updateUser(userId, {
+            otp_code: otpCode,
+            otp_expiry: otpExpiry
+        });
+        await sendEmail({
+            to: user.email,
+            ...emailTemplates.otpVerification(otpCode)
+        });
+        res.json({ message: "OTP Sent"});
+
+        } catch (error) {
+        res.status(500).json({ message: error.message });
+        }
+    },
 }
 
 export default authController;

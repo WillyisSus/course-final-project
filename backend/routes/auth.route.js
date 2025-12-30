@@ -8,7 +8,9 @@ const authRoute = Router();
 authRoute.post('/login', validate(loginSchema), authController.loginUser)
 authRoute.post('/register', validate(registerUserSchema), authController.signUp)
 authRoute.post('/logout', authController.checkAuth, authController.logout)
-authRoute.post('/refreshToken', authController.refreshToken)
+authRoute.post('/refresh-token', authController.refreshToken)
+authRoute.post('/verify-otp', authController.checkAuth, authController.verifyOTP)
+authRoute.get('/verify-otp', authController.checkAuth, authController.sendOtp)
 // authRoute.post('/refreshToken', authController.refreshToken)
 
 export default authRoute;

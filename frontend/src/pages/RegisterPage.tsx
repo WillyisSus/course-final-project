@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate, Link } from "react-router";
+import ReCAPTCHA from "react-google-recaptcha"; // <--- Import this
 import api from "../lib/axios";
 import { registerSchema, type RegisterInput } from "../lib/validators/auth";
 import { Eye, EyeOff } from "lucide-react";
@@ -13,27 +14,49 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 
 const RegisterPage = () => {
   const navigate = useNavigate();
-  // Separate states for the two password fields
+  const recaptchaRef = useRef<ReCAPTCHA>(null);
+  
+  // State
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null); // <--- Store token
 
   const form = useForm<RegisterInput>({
     resolver: zodResolver(registerSchema),
     defaultValues: { 
       email: "", password: "", confirmPassword: "", 
-      full_name: "", address: "", dob: "" 
+      full_name: "", address: "", dob: ""
     },
   });
 
+  const onCaptchaChange = (token: string | null) => {
+    console.log(token)
+    setCaptchaToken(token);
+  };
+
   const onSubmit = async (data: RegisterInput) => {
+    // 1. Block if Captcha is missing
+    if (!captchaToken) {
+      alert("Please verify that you are not a robot.");
+      return;
+    }
+
     try {
-      console.log(data)
       const { confirmPassword, ...payload } = data;
-      await api.post("/auth/register", payload);
+      const registerBody = {
+        ...payload,
+        recaptcha_token: captchaToken
+      }
+      console.log(registerBody)
+      console.log();
+      // 2. Send token to backend along with form data
+      await api.post("/auth/register", registerBody)
+      
       navigate("/login");
     } catch (error) {
-      console.log(error)
       console.error("Registration failed", error);
+      recaptchaRef.current?.reset(); // Reset captcha on error
+      setCaptchaToken(null);
     }
   };
 
@@ -52,7 +75,7 @@ const RegisterPage = () => {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               
-              {/* Name & Email Fields (Hidden for brevity, same as before) */}
+              {/* --- (Existing Input Fields: Name, Email, Address, DOB...) --- */}
               <FormField
                 control={form.control}
                 name="full_name"
@@ -64,7 +87,7 @@ const RegisterPage = () => {
                   </FormItem>
                 )}
               />
-               <FormField
+              <FormField
                 control={form.control}
                 name="email"
                 render={({ field }) => (
@@ -75,6 +98,7 @@ const RegisterPage = () => {
                   </FormItem>
                 )}
               />
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
                   control={form.control}
@@ -100,9 +124,8 @@ const RegisterPage = () => {
                 />
               </div>
 
-              {/* Password & Confirm Password Row */}
+              {/* Password Fields */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* 1. PASSWORD */}
                 <FormField
                   control={form.control}
                   name="password"
@@ -111,18 +134,8 @@ const RegisterPage = () => {
                       <FormLabel className="text-base">Password</FormLabel>
                       <FormControl>
                         <div className="relative">
-                          <Input 
-                            type={showPassword ? "text" : "password"} 
-                            className="h-12 text-base pr-10" 
-                            {...field} 
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
-                            onClick={() => setShowPassword(!showPassword)}
-                          >
+                          <Input type={showPassword ? "text" : "password"} className="h-12 text-base pr-10" {...field} />
+                          <Button type="button" variant="ghost" size="sm" className="absolute right-0 top-0 h-full px-3 hover:bg-transparent" onClick={() => setShowPassword(!showPassword)}>
                             {showPassword ? <EyeOff className="h-4 w-4 text-gray-400" /> : <Eye className="h-4 w-4 text-gray-400" />}
                           </Button>
                         </div>
@@ -131,8 +144,6 @@ const RegisterPage = () => {
                     </FormItem>
                   )}
                 />
-
-                {/* 2. CONFIRM PASSWORD */}
                 <FormField
                   control={form.control}
                   name="confirmPassword"
@@ -141,18 +152,8 @@ const RegisterPage = () => {
                       <FormLabel className="text-base">Confirm Password</FormLabel>
                       <FormControl>
                          <div className="relative">
-                          <Input 
-                            type={showConfirmPassword ? "text" : "password"} 
-                            className="h-12 text-base pr-10" 
-                            {...field} 
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
-                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          >
+                          <Input type={showConfirmPassword ? "text" : "password"} className="h-12 text-base pr-10" {...field} />
+                          <Button type="button" variant="ghost" size="sm" className="absolute right-0 top-0 h-full px-3 hover:bg-transparent" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
                             {showConfirmPassword ? <EyeOff className="h-4 w-4 text-gray-400" /> : <Eye className="h-4 w-4 text-gray-400" />}
                           </Button>
                         </div>
@@ -163,8 +164,21 @@ const RegisterPage = () => {
                 />
               </div>
 
-              <div className="pt-6">
-                <Button type="submit" className="w-full h-12 text-lg bg-blue-600 hover:bg-blue-700 font-bold">
+              {/* --- NEW: ReCAPTCHA Section --- */}
+              <div className="flex justify-center pt-2">
+                <ReCAPTCHA
+                  ref={recaptchaRef}
+                  sitekey="6Ld9XDosAAAAAImp6oFiP21_oK-kTc5MX0NZfF1Z" // <--- Paste your Site Key here
+                  onChange={onCaptchaChange}
+                />
+              </div>
+
+              <div className="pt-2">
+                <Button 
+                  type="submit" 
+                  disabled={!captchaToken} // Optional: Disable button until verified
+                  className="w-full h-12 text-lg bg-blue-600 hover:bg-blue-700 font-bold disabled:opacity-50"
+                >
                   Create Account
                 </Button>
                 

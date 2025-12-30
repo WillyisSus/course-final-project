@@ -15,8 +15,9 @@ api.interceptors.request.use(
   (config) => {
     const state = store.getState();
     const token = state.auth.accessToken;
+    console.log("Interceptor Running. Token:", token ? "Present" : "Missing");
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      config.headers.Authorization = `Bearer ${token}`;    
     }
     return config;
   },
@@ -37,8 +38,8 @@ api.interceptors.response.use(
         // 1. Attempt to get a new Access Token
         // We use 'axios' directly (not 'api') to avoid using interceptors for this specific call
         const refreshResponse = await axios.post(
-          'http://localhost:3000/api/auth/refresh', 
-          {}, 
+          'http://localhost:3000/api/auth/refresh-token', 
+          {user_id: store.getState().auth.user?.user_id}, 
           { withCredentials: true } // Send the cookie
         );
 

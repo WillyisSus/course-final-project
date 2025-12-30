@@ -31,7 +31,11 @@ const LoginPage = () => {
         user: res.data.user,
         accessToken: res.data.accessToken,
       }));
-      navigate("/");
+      if (res.data.user.is_verified === false) {
+        navigate("/verify-otp"); // Redirect to OTP page
+      } else {
+        navigate("/"); // Redirect to Home
+      }
     } catch (error: any) {
       console.error("Login failed", error);
     }

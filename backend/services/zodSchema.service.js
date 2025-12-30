@@ -17,6 +17,7 @@ export const registerUserSchema = z.object({
   full_name: z.string().min(2).max(100), //
   address: z.string().optional(),
   dob: z.coerce.date().optional(), // Coerce handles string "2000-01-01" -> Date
+  recaptcha_token: z.string(),
 });
 
 export const updateUserSchema = z.object({

@@ -4,8 +4,9 @@ import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 interface User {
     user_id: number;
     email: string;
-    role: 'USER' | 'ADMIN' | 'SELLER';
     full_name: string;
+    role: 'BIDDER' | 'SELLER' | 'ADMIN';
+    is_verified: boolean; // <--- Make sure this is here
 }
 
 // 2. Define the auth state interface
@@ -33,29 +34,36 @@ const authSlice = createSlice({
         state, 
         action: PayloadAction<{ user: User; accessToken: string}>
         ) => {
-        const { user, accessToken} = action.payload;
-        state.user = user;
-        state.accessToken = accessToken;
-        state.isAuthenticated = true;
-        
-        // Save to local storage
-        localStorage.setItem('accessToken', accessToken);
-        localStorage.setItem('user', JSON.stringify(user));
+            const { user, accessToken} = action.payload;
+            console.log("Setting credentials in authSlice: ", user, accessToken);
+            state.user = user;
+            state.accessToken = accessToken;
+            state.isAuthenticated = true;
+            
+            // Save to local storage
+            localStorage.setItem('accessToken', accessToken);
+            localStorage.setItem('user', JSON.stringify(user));
+            localStorage.setItem("is_authenticated", true.toString());
         },
         
         // Call this when the user clicks "Logout" or token expires
         logOut: (state) => {
-        state.user = null;
-        state.accessToken = null;
-        state.isAuthenticated = false;
-        
-        // Clear local storage
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('user');
-        localStorage.removeItem('role');
+            state.user = null;
+            state.accessToken = null;
+            state.isAuthenticated = false;
+            
+            // Clear local storage
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('user');
+            localStorage.removeItem('is_authenticated');
         },
+        verifyUserSuccess: (state) => {
+            if (state.user) {
+                state.user.is_verified = true;
+            }
+        }
     },
 });
 
-export const { setCredentials, logOut } = authSlice.actions;
+export const { setCredentials, logOut, verifyUserSuccess } = authSlice.actions;
 export default authSlice.reducer;

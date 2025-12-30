@@ -27,9 +27,11 @@ export const UserService = {
 
   // fetching a user profile by ID, but stripping out sensitive auth data
   async findUserById(userId) {
-    const user = await models.users.findByPk(userId, {
+    console.log("Finding user by ID:", userId);
+    const user = await models.users.findOne({
+      where: { user_id: userId },
       attributes: { 
-        exclude: ['password_hash', 'refresh_token', 'otp_code'] // keeping secrets secret
+        exclude: ['password_hash', 'refresh_token'] // keeping secrets secret
       }
     });
 
@@ -42,11 +44,14 @@ export const UserService = {
   // helper to find by email (useful for login flows), explicitly requesting the password if needed
   async findUserByEmail(email, withPassword = false) {
     const options = {
-      where: { email: email }
+      where: { email: email },
+      attributes: {
+        exclude: ['refresh_token', 'otp_code'] // always exclude these
+      }
     };
-
+    
     if (!withPassword) {
-      options.attributes = { exclude: ['password_hash', 'refresh_token', 'otp_code'] };
+      options.attributes.exclude.push('password_hash');
     }
 
     return await models.users.findOne(options);
