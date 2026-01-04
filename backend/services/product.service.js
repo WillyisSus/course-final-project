@@ -111,6 +111,10 @@ export const ProductService = {
           model: models.users,
           as: 'seller', //
           attributes: ['user_id', 'full_name', 'positive_rating', 'negative_rating']
+        },{
+          model: models.users,
+          as: 'winner', //
+          attributes: ['user_id', 'full_name', 'positive_rating', 'negative_rating']
         }
       ]
     });

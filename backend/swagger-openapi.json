@@ -49,7 +49,7 @@
       "BearerAuth": {
         "type": "apiKey",
         "in": "header",
-        "name": "apikey",
+        "name": "Authorization",
         "description": "JWT token for authentication"
       }
     },

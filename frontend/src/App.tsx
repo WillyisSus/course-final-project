@@ -8,6 +8,7 @@ import NotFoundPage from './pages/NotFoundPage'
 import MainLayout from './layouts/MainLayout'
 import VerifyOtpPage from './pages/VerifyOTPPage'
 import ProductListPage from './pages/ProductListPage'
+import ProductDetailPage from './pages/ProductDetailsPage'
 const router = createBrowserRouter([
   {
     path:"",
@@ -19,7 +20,11 @@ const router = createBrowserRouter([
       },{
         path: "products",
         Component: ProductListPage
+      }, {
+        path: "products/:id",
+        Component: ProductDetailPage
       }
+
     ]
   },
   {

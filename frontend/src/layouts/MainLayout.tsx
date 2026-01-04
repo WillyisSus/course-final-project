@@ -8,7 +8,7 @@ const MainLayout = () => {
       <Navbar />
 
       {/* The page content (HomePage, DetailPage, etc.) renders here */}
-      <main className="grow container mx-auto px-4 py-2">
+      <main className="grow container max-w-[1200px] mx-auto px-4 py-2">
         <Outlet />
       </main>
 

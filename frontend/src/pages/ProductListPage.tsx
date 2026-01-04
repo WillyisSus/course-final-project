@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect} from 'react';
 import { useSearchParams } from 'react-router';
 import { useServerPagination } from '../lib/usePagination';
 import api from '../lib/axios';

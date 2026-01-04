@@ -1,23 +1,47 @@
 // src/types/product.ts
 
+export interface ProductImage {
+  image_url: string;
+  is_primary: boolean;
+}
+
+export interface ProductDescription {
+  content: string;
+}
+
+export interface Category {
+  category_id: number;
+  name: string;
+}
+
+export interface User {
+  user_id: number;
+  full_name: string;
+  positive_rating: number;
+  negative_rating: number;
+}
+
 export interface Product {
   product_id: number;
   seller_id: number;
   category_id: number;
+  winner_id?: number | null;
   name: string;
-  price_start: number;
-  price_current: number;
-  price_buy_now?: number; // Optional
-  price_step: number;
+  price_start: string;
+  price_step: string;
+  price_buy_now?: string | null;
+  price_current: string;
   start_date: string;
   end_date: string;
   is_auto_extend: boolean;
-  bid_count?: number;
-  winner_id?: number;
-  winner?:{full_name:string};
   status: 'ACTIVE' | 'SOLD' | 'EXPIRED';
-  // Include other backend fields as needed
-  product_images?: { image_url: string; is_primary: boolean }[];
+  tsv?: string;
+  bid_count?: number;
+  product_descriptions?: ProductDescription[];
+  product_images?: ProductImage[];
+  category?: Category;
+  seller?: User;
+  winner?: User;
 }
 
 // The raw form values from your React Hook Form or state

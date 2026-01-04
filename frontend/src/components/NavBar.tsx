@@ -5,7 +5,7 @@ import { logOut } from '../store/slices/authSlice';
 import api from '../lib/axios';
 
 // Icons & UI
-import { Search, LogIn, User, ChevronDown, LogOut, ShoppingBag, LayoutDashboard, ListOrdered } from 'lucide-react';
+import { Search, LogIn, User, ChevronDown, LogOut, ShoppingBag, LayoutDashboard, ListOrdered, Gavel, GavelIcon, HandCoinsIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
@@ -63,7 +63,7 @@ const Navbar = () => {
         {/* --- LEFT SECTION --- */}
         <div className="flex items-center gap-6 flex-1">
           <Link to="/" className="text-2xl font-bold text-blue-600 flex items-center gap-2 hover:opacity-90 transition">
-            <ShoppingBag className="w-6 h-6" />
+            <HandCoinsIcon className="w-8 h-8" />
             BigBiddie
           </Link>
 
