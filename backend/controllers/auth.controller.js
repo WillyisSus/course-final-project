@@ -101,8 +101,8 @@ const authController = {
     checkAuth: async (req, res, next) => {
         try {
             const authHeader = req.headers['authorization'];
-
-            console.log("Auth Header:", authHeader)
+                
+            console.log("Auth Header:", authHeader, "req.headers:", req.headers)
             const token = authHeader && authHeader.split(' ')[1];
             console.log("Token:", token)
             if (token == null) {
@@ -128,16 +128,20 @@ const authController = {
     refreshToken: async (req, res) => {
         try {
             const authHeader = req.headers['authorization'];
-
+            const body = req.body;
             console.log("Auth Header:", authHeader)
             const token = authHeader && authHeader.split(' ')[1];
             console.log("Refresh Token Request Body:", token);   
             // Find user from expired access token
-            const {user_id} = jwt.decode(token);
-            if (!user_id) {
+            if (token == null) {
+                return res.status(401).json({ message: 'Access Denied. Token missing.' });
+            }
+            const accessTokenPayload = jwt.decode(token);
+            console.log("Decoded Access Token Payload:", accessTokenPayload);
+            if (!accessTokenPayload.user_id) {
                 return res.status(401).json({ message: 'Invalid token. User ID missing.' });
             }
-            const refreshToken = await UserService.getRefreshTokenByUserId(user_id);
+            const refreshToken = await UserService.getRefreshTokenByUserId(accessTokenPayload.user_id);
             const decodedPayload = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, decoded) => {
                 if (err) {
                     console.error("Refresh Token Verification Error:", err);

@@ -30,9 +30,7 @@ const BiddingSection = ({
 }: BiddingSectionProps) => {
     
     const [isFormOpen, setIsFormOpen] = useState(false);
-    const minBid = currentAutoBid 
-        ? Math.min(Number(currentPrice) + Number(step), Number(currentAutoBid.max_price) + 1)
-        : Number(currentPrice) + Number(step);
+    const minBid = Number(currentPrice) + Number(step);
 
     const bidSchema = z.object({
         product_id: z.number().optional(),

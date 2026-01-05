@@ -1,7 +1,8 @@
+import type { ProductImage } from '@/types/product';
 import { useState } from 'react';
 
 interface ProductGalleryProps {
-  images: { image_url: string }[];
+  images: ProductImage[] | undefined;
   productName: string;
 }
 

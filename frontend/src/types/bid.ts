@@ -9,9 +9,10 @@ export interface Bid {
 }
 
 export interface CreateBid {
-  product_id: number;
+  product_id?: number;
   max_price: number;
 }
+
 
 export interface AutoBid {
   auto_bid_id: number;

@@ -9,6 +9,7 @@ import MainLayout from './layouts/MainLayout'
 import VerifyOtpPage from './pages/VerifyOTPPage'
 import ProductListPage from './pages/ProductListPage'
 import ProductDetailPage from './pages/ProductDetailsPage'
+import { Toaster } from './components/ui/sonner'
 const router = createBrowserRouter([
   {
     path:"",
@@ -47,6 +48,7 @@ function App() {
   return (
     <>
       <RouterProvider router={router} />
+      <Toaster position='top-center'/>
     </>
   )
 }

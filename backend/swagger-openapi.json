@@ -645,10 +645,10 @@
         }
       }
     },
-    "/api/auth/refreshToken": {
+    "/api/auth/refresh-token": {
       "post": {
         "summary": "Refresh Access Token",
-        "operationId": "refreshToken",
+        "operationId": "refresh-token",
         "tags": ["Authentication"],
         "requestBody": {
           "required": true,

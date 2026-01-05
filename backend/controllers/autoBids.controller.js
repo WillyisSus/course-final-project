@@ -49,6 +49,15 @@ const autoBidController = {
                 const calculateNewBids = await AutoBidService.calculateAutoBids(product_id, bidderId, max_price);
                 if (calculateNewBids){
                     resData.bidUpdates = calculateNewBids;
+                    const updatedProduct = await ProductService.getProductById(product_id);
+                    const io = req.app.get('io')
+                    io.to(`product_${product_id}`).emit('product_updated', {
+                        type: 'BID_PLACED',
+                        data: {
+                            product: updatedProduct,
+                            newBid: calculateNewBids
+                        }
+                    });
                 }
                 res.status(201).json({ 
                     message: "Auto-bid configuration created successfully", 
@@ -69,7 +78,21 @@ const autoBidController = {
             const { max_price } = req.body;
 
             const updatedAutoBid = await AutoBidService.updateAutoBid(autoBidId, bidderId, max_price);
-
+            if (updatedAutoBid){
+                const calculateNewBids = await AutoBidService.calculateAutoBids(updatedAutoBid.product_id, bidderId, max_price);
+                if (calculateNewBids){
+                    const newBidPlaced = await BidService.findBidDetail(calculateNewBids.bid_id);
+                    const updatedProduct = await ProductService.findProductDetail(updatedAutoBid.product_id);
+                    const io = req.app.get('io')
+                    io.to(`product_${updatedAutoBid.product_id}`).emit('product_updated', {
+                        type: 'BID_PLACED',
+                        data: {
+                            product: updatedProduct,
+                            newBid: newBidPlaced
+                        }
+                    });
+                }
+            }
             res.json({ 
                 message: "Auto-bid updated successfully", 
                 data: updatedAutoBid 

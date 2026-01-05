@@ -88,7 +88,7 @@ export const BidService = {
         {
           model: models.users,
           as: 'bidder', //
-          attributes: ['user_id', 'full_name', 'positive_rating'] // masking email/private info
+          attributes: ['user_id', 'full_name', 'positive_rating', 'negative_rating'] // masking email/private info
         }
       ],
       order: [['amount', 'DESC']] // highest bid first
@@ -102,6 +102,19 @@ export const BidService = {
       },
       order: [['amount', 'DESC']]
     });
+  },
+  async findBidDetail(bidId, bidderId=null) {
+    const bid =  await models.bids.findByPk(bidId, {
+      include: [
+        {
+          model: models.users,
+          as: 'bidder',
+          attributes: ['user_id', 'full_name', 'positive_rating', 'negative_rating']
+        },
+      ]
+    });
+    if (!bid) throw new Error('Bid not found');
+    return bid;
   },
   // Admin-only or special logic: fixing a bid
   async updateBid(bidId, updateData) {

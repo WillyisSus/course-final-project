@@ -40,7 +40,12 @@ api.interceptors.response.use(
         const refreshResponse = await axios.post(
           'http://localhost:3000/api/auth/refresh-token', 
           {user_id: store.getState().auth.user?.user_id}, 
-          { withCredentials: true } // Send the cookie
+          
+          { withCredentials: true, 
+            headers: {
+            'Content-Type': 'application/json',
+            "Authorization": `Bearer ${store.getState().auth.accessToken}`
+          } } // Send the cookie
         );
 
         const newAccessToken = refreshResponse.data.accessToken;
