@@ -134,3 +134,14 @@ export const createUpgradeRequestSchema = z.object({
 export const upgradeRequestStatusSchema = z.object({
   status: z.enum(["APPROVED", "REJECTED"]), //
 });
+
+export const createCommentSchema = z.object({
+  product_id: idSchema,
+  content: z.string().min(1, "Content cannot be empty"), //
+  parent_id: idSchema.optional(), // For replies
+});
+
+export const createMessageSchema = z.object({
+  receiver_id: idSchema,
+  content: z.string().min(1, "Message content cannot be empty"), //
+});

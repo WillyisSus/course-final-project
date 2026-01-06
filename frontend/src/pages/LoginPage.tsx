@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 
+import { toast } from "sonner";
 const LoginPage = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -34,9 +35,11 @@ const LoginPage = () => {
       if (res.data.user.is_verified === false) {
         navigate("/verify-otp"); // Redirect to OTP page
       } else {
+        toast.success("Login successful!");
         navigate("/"); // Redirect to Home
       }
     } catch (error: any) {
+      toast.error(error.response?.data?.message || "Login failed. Please try again.");
       console.error("Login failed", error);
     }
   };

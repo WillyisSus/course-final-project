@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { Product } from '@/types/product';
+import type { Product, ProductComment } from '@/types/product';
 import type { Bid, CreateBid, AutoBid } from '@/types/bid';
 
 const ProductDetailPage = () => {
@@ -23,6 +23,7 @@ const ProductDetailPage = () => {
     const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [bidsHistory, setBidsHistory] = useState<Bid[]>([]);
+    const [comments, setComments] = useState<ProductComment[]>([]);
     const [currentAutoBid, setCurrentAutoBid] = useState<AutoBid | null>(null);
     const [priceChanged, setPriceChanged] = useState(false); 
     const socketRef = useRef<Socket | null>(null);
@@ -63,6 +64,18 @@ const ProductDetailPage = () => {
     }, [id]);
 
     useEffect(() => {
+        const fetchComments = async () => {
+            try {
+                const res = await api.get(`/comments?product_id=${id}`);
+                setComments(res.data.data || []);
+            } catch (error) {
+                console.error("Failed to load current comment", error);
+                setComments([]);
+            }
+        };
+        if (id) fetchComments();
+    }, [id]);
+    useEffect(() => {
         const fetchCurrentAutoBid = async () => {
             try {
                 const res = await api.get(`/auto-bids?product_id=${id}`);
@@ -74,7 +87,6 @@ const ProductDetailPage = () => {
         };
         if (id) fetchCurrentAutoBid();
     }, [id]);
-
     // --- SOCKET CONNECTION ---
     useEffect(() => {
         socketRef.current = io("http://localhost:3000");
@@ -98,7 +110,22 @@ const ProductDetailPage = () => {
                 toast.success(`New Bid! Price is now $${Number(payload.data.product.price_current).toLocaleString()}`);
             }
         });
-
+        socketRef.current.on("new_comment", (payload: {type: string, data: object}) => {
+            console.log("New comment received:", payload.data);
+            // Optionally, you can refresh comments or append the new comment
+            // For simplicity, we'll just log it here
+            if (payload.type === 'NEW_COMMENT'){
+                if (payload.data){
+                    setComments((prev) => [payload.data as ProductComment, ...prev]);
+                }
+            }
+        });
+        socketRef.current.on("disconnect", () => {
+            console.log("Socket disconnected");
+        });
+        socketRef.current.on("error", (error: any) => {
+            console.error("Socket error:", error);
+        });
         return () => {
             if (socketRef.current) {
                 socketRef.current.emit("leave_product", id);
@@ -128,8 +155,20 @@ const ProductDetailPage = () => {
         }
     };
 
-    const handlePostComment = async (content: string) => {
+    const handlePostComment = async (content: string, parent_id: number|null = null) => {
         console.log("Posting comment:", content);
+        try {
+            const payload = {
+                product_id: Number(id),
+                content,
+                parent_id: parent_id
+            }
+            await api.post('/comments', payload);
+            toast.success("Comment posted successfully!");
+        } catch (error) {
+            toast.error("Failed to post comment. Please try again.");
+            console.error("Failed to post comment", error);
+        }
     };
 
     const scrollToBidding = () => {
@@ -269,7 +308,7 @@ const ProductDetailPage = () => {
         <div className="bg-white border border-gray-200 rounded-xl p-6 lg:p-8 shadow-sm space-y-4">
             <h2 className="text-2xl font-bold border-b pb-4 text-gray-900">Community Q&A</h2>
             <CommentSection 
-                comments={product.comments || []}
+                comments={comments || []}
                 onPostComment={handlePostComment}
             />
         </div>

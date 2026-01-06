@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Loader2, CheckCircle2 } from "lucide-react";
+import { toast } from "sonner";
 
 // Simple Schema for 6-digit OTP
 const otpSchema = z.object({
@@ -63,11 +64,11 @@ const VerifyOtpPage = () => {
     setResending(true);
     try {
       await api.get("/auth/verify-otp");
-      alert("A new code has been sent to your email."); // Or use toast
+      toast.info("A new code has been sent to your email."); // Or use toast
       form.clearErrors();
     } catch (error: any) {
       console.error("Resend failed", error);
-      alert(error.response?.data?.message || "Failed to resend code");
+      toast.error(error.response?.data?.message || "Failed to resend code");
     } finally {
       setResending(false);
     }

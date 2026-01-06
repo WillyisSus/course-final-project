@@ -1,4 +1,5 @@
 import { ProductService } from "../services/product.service.js";
+import { ProductCommentService } from "../services/productComments.service.js";
 import { ProductImageService } from "../services/productImages.service.js";
 const productController = {
     // GET /api/products
@@ -48,42 +49,24 @@ const productController = {
             });
         } catch (error) {
             console.error("Error in getOne:", error);
-            // differentiating 404 vs 500
             const status = error.message === 'Product not found' ? 404 : 500;
             res.status(status).json({ message: error.message });
         }
     },
 
-    // POST /api/products
     postOne: async (req, res) => {
     try {
-        const sellerId = req.user?.user_id || 1; // From auth middleware, default to 1 for testing
-        
-        // 1. Validation Check 
-        // Ensure files exist if your logic requires them
+        const sellerId = req.user?.user_id || 1; 
         if (!req.files || req.files.length === 0) {
             return res.status(400).json({ message: "At least one product image is required." });
         }
-
         if (req.files.length > 4) {
             return res.status(400).json({ message: "Maximum 4 images allowed." });
         }
-
-        // 2. Create Product Record
-        // Multer has already populated req.body with the text fields
         const newProduct = await ProductService.createProduct(req.body, sellerId);
-        
-        // 3. Store Images Logic
-        // We iterate over the files Multer saved
         const imagePromises = req.files.map((file, index) => {
-            // Construct the URL/Path. 
-            // If serving statically, it might look like: "http://localhost:3000/images/filename.jpg"
-            // For now, we save the relative path or filename.
             const imageUrl = `/images/${file.filename}`;
-            
-            // Logic: First image is primary, others are not
             const isPrimary = index === 0;
-
             return ProductImageService.createImage(
             newProduct.product_id, 
             sellerId, 
@@ -91,11 +74,7 @@ const productController = {
             isPrimary
             );
         });
-
-        // Wait for all images to be saved in DB
         await Promise.all(imagePromises);
-
-        // 4. Return success
         res.status(201).json({ 
             message: "Product and images created successfully", 
             data: newProduct 
@@ -150,7 +129,7 @@ const productController = {
             console.error("Error in blockBidder:", error);
             res.status(400).json({ message: error.message });
         }
-    }
+    },
     
 }
 

@@ -42,7 +42,12 @@ const productCommentController = {
                 content, 
                 parent_id || null // null if it's a root question
             );
-
+            const commentPayload = await ProductCommentService.findCommentById(newComment.comment_id);
+            const io = req.app.get('io');
+            io.to(`product_${product_id}`).emit('new_comment', {
+                type: "NEW_COMMENT",
+                data: commentPayload
+            });
             res.status(201).json({ 
                 message: parent_id ? "Reply posted successfully" : "Question posted successfully", 
                 data: newComment 
@@ -51,7 +56,18 @@ const productCommentController = {
             res.status(500).json({ message: error.message });
         }
     },
-
+    replyComment: async (req, res) => {
+        try {
+            const productId = req.params.id;
+            const userId = req.user.user_id;
+            const { content, parentId } = req.body;
+            const newReply = await ProductCommentService.createComment(productId, userId, content, parentId);
+            res.status(201).json({ message: "Reply added successfully", data: newReply });
+        } catch (error) {
+            console.error("Error in replyComment:", error);
+            res.status(500).json({ message: error.message });   
+        }
+    },
     // DELETE /api/comments/:id
     deleteOne: async (req, res) => {
         try {

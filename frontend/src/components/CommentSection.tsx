@@ -3,28 +3,39 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-
-interface Comment {
-  comment_id: number;
-  content: string;
-  created_at: string;
-  user: { full_name: string };
-}
-
+import type { ProductComment } from '@/types/product';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
 interface CommentSectionProps {
-  comments: Comment[];
+  comments: ProductComment[];
   onPostComment: (content: string) => void;
 }
 
 const CommentSection = ({ comments, onPostComment }: CommentSectionProps) => {
   const [text, setText] = useState("");
-
-  const handleSubmit = () => {
+  const createCommentSchema = z.object({
+    content: z.string().min(1, "Comment cannot be empty").max(1000, "Comment is too long"),
+  });
+  type CreateCommentInput = z.infer<typeof createCommentSchema>;
+  const {
+    register, 
+    handleSubmit, 
+    formState: { errors }, 
+    reset} = useForm<CreateCommentInput>(
+  {
+    resolver: zodResolver(createCommentSchema),
+    defaultValues: { content: "" },
+  }) 
+  const onSubmit = () => {
     if (!text.trim()) return;
     onPostComment(text);
     setText("");
   };
-
+  const handleCancel = () => {
+    setText("");
+    reset();
+  }
   return (
     <div className="space-y-6">
       <h3 className="text-xl font-bold">Discussion</h3>
@@ -52,16 +63,25 @@ const CommentSection = ({ comments, onPostComment }: CommentSectionProps) => {
       <Separator />
 
       {/* Post Comment Form */}
-      <div className="flex gap-4">
+      <div className="flex flex-col gap-4">
         <Textarea 
+          {...register("content", { required: true })}
           placeholder="Ask a question or share your thoughts..." 
           className="min-h-[100px]"
           value={text}
           onChange={(e) => setText(e.target.value)}
         />
-        <Button onClick={handleSubmit} className="self-end" disabled={!text.trim()}>
-          Post
-        </Button>
+        <p className='text-red text-sm'>
+          {errors.content && errors.content.message}
+        </p>
+        <div className='flex flex-row gap-4 self-end'>
+          <Button onClick={handleSubmit(onSubmit)} className="self-end" disabled={!text.trim()}>
+            Post
+          </Button>
+          <Button onClick={handleCancel} className="self-end">
+            Cancel
+          </Button>
+        </div>
       </div>
     </div>
   );

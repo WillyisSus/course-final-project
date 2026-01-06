@@ -20,7 +20,15 @@ export interface User {
   positive_rating: number;
   negative_rating: number;
 }
-
+export interface ProductComment{
+  comment_id: number;
+  product_id: number;
+  user_id: number;
+  content: string;
+  parentid: number | null;
+  created_at: string;
+  user: User;
+}
 export interface Product {
   product_id: number;
   seller_id: number;

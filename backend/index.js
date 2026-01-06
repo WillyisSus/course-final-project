@@ -18,6 +18,7 @@ import autoBidRouter from './routes/autobids.route.js';
 import bidRouter from './routes/bid.route.js';
 import productCommentsRouter from './routes/productComments.route.js';
 import messageRouter from './routes/messages.route.js';
+import startWorker from './utils/worker.js';
 
 const PORT = 3000;
 configDotenv();
@@ -102,6 +103,7 @@ const start = async () => {
   try {
     await sequelize.authenticate();
     console.log('Connection has been established successfully.');
+    startWorker();
   } catch (error) {
     console.error('Error starting server, retrying', error);
     try {
@@ -111,7 +113,6 @@ const start = async () => {
       return; 
     }
   } 
-
   httpServer.listen(PORT, () => {   
       console.log(`Server is running on http://localhost:${PORT}`);
   });

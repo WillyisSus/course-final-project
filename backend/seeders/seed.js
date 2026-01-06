@@ -1,443 +1,214 @@
-'use strict';
+import models, {sequelize}from '../utils/db.js';
+import { AutoBidService } from '../services/autobids.service.js';
+import bcrypt from 'bcryptjs';
+import { is } from 'zod/locales';
+const seedDatabase = async () => {
+    console.log("Starting Database Reset & Smart Seed...");
 
-import bcryptjs from 'bcryptjs';
-import models, { sequelize } from '../utils/db.js';
+    // We use a transaction for the Setup phase
+    const t = await sequelize.transaction();
 
-const seedData = async () => {
-  // ============================================
-  // 1. SEED USERS (1 Admin + 1 Seller + 4 Bidders)
-  // ============================================
-  const hashedPassword = await bcryptjs.hash('password123', 10);
+    try {
+        // ============================================================
+        // 1. CLEAN DATABASE (Nuke)
+        // ============================================================
+        console.log("Cleaning database...");
+        
+        // Order matters for Foreign Keys. Delete children first.
+        if (models.product_images) await models.product_images.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true, transaction: t });
+        if (models.product_descriptions) await models.product_descriptions.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true, transaction: t });
+        if (models.auto_bids) await models.auto_bids.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true, transaction: t });
+        if (models.bids) await models.bids.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true, transaction: t });
+        if (models.products) await models.products.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true, transaction: t });
+        if (models.categories) await models.categories.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true, transaction: t });
+        if (models.users) await models.users.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true, transaction: t });
 
-  const adminUser = await models.users.create({
-    email: 'admin@auction.com',
-    password_hash: hashedPassword,
-    full_name: 'Admin User',
-    address: '123 Admin Street, Admin City',
-    dob: '1990-01-15',
-    role: 'ADMIN',
-    is_verified: true,
-    positive_rating: 100,
-    negative_rating: 0,
-  });
+        console.log("Database Cleaned.\n");
 
-  const sellerUser = await models.users.create({
-    email: 'seller@auction.com',
-    password_hash: hashedPassword,
-    full_name: 'John Seller',
-    address: '456 Seller Avenue, Seller City',
-    dob: '1985-03-20',
-    role: 'SELLER',
-    is_verified: true,
-    positive_rating: 95,
-    negative_rating: 2,
-  });
+        // ============================================================
+        // 2. CREATE USERS
+        // ============================================================
+        console.log("Creating Users...");
+        const commonPassword = await bcrypt.hash("Password123!", 10);
 
-  const bidders = await Promise.all([
-    models.users.create({
-      email: 'bidder1@auction.com',
-      password_hash: hashedPassword,
-      full_name: 'Alice Johnson',
-      address: '789 Bidder Lane, Bidder Town',
-      dob: '1995-05-10',
-      role: 'BIDDER',
-      is_verified: true,
-      positive_rating: 85,
-      negative_rating: 1,
-    }),
-    models.users.create({
-      email: 'bidder2@auction.com',
-      password_hash: hashedPassword,
-      full_name: 'Bob Smith',
-      address: '321 Bidder Drive, Bidder City',
-      dob: '1992-07-25',
-      role: 'BIDDER',
-      is_verified: true,
-      positive_rating: 90,
-      negative_rating: 0,
-    }),
-    models.users.create({
-      email: 'bidder3@auction.com',
-      password_hash: hashedPassword,
-      full_name: 'Carol Williams',
-      address: '654 Bidder Road, Bidder Village',
-      dob: '1998-09-14',
-      role: 'BIDDER',
-      is_verified: true,
-      positive_rating: 88,
-      negative_rating: 2,
-    }),
-    models.users.create({
-      email: 'bidder4@auction.com',
-      password_hash: hashedPassword,
-      full_name: 'David Brown',
-      address: '987 Bidder Way, Bidder Point',
-      dob: '1993-11-08',
-      role: 'BIDDER',
-      is_verified: true,
-      positive_rating: 92,
-      negative_rating: 1,
-    }),
-  ]);
+        // Define users exactly as requested
+        const usersData = [
+            { email: "vovietlong0845927889@gmail.com", full_name: "Super Admin", role: "ADMIN", password_hash: commonPassword, posstive_rating: 100, negative_rating: 0, address: "123 Admin St, Admin City", is_verified: true },
+            { email: "vovietlong01082004abc@gmail.com", full_name: "Main Seller", role: "SELLER", password_hash: commonPassword, posstive_rating: 100, negative_rating: 0, address: "123 Seller St, Seller City",  is_verified: true  },
+            { email: "aszx134679852abc@gmail.com", full_name: "Bidder Alpha", role: "BIDDER", password_hash: commonPassword,  posstive_rating: 100, negative_rating: 0, address: "123 Bidder St, Bidder City",  is_verified: true  },
+            { email: "vvlong22@clc.fitus.edu.vn", full_name: "Bidder Beta", role: "BIDDER", password_hash: commonPassword, posstive_rating: 100, negative_rating: 0, address: "123 Bidder St, Bidder City",  is_verified: true   },
+            { email: "willydalong01082004@gmail.com", full_name: "Bidder Gamma", role: "BIDDER", password_hash: commonPassword, posstive_rating: 100, negative_rating: 0, address: "123 Bidder St, Bidder City",  is_verified: true   },
+        ];
 
-  console.log('Creating users... OK');
+        const createdUsers = await models.users.bulkCreate(usersData, { transaction: t, returning: true });
+        
+        // Map users for later use
+        const seller = createdUsers.find(u => u.email === "vovietlong01082004abc@gmail.com");
+        const bidders = createdUsers.filter(u => u.role === "BIDDER"); // The 3 bidders
 
-  // ============================================
-  // 2. SEED CATEGORIES (3 Parent + 2 Child)
-  // ============================================
-  const parentCategories = await Promise.all([
-    models.categories.create({
-      name: 'Electronics',
-      parent_id: null,
-    }),
-    models.categories.create({
-      name: 'Collectibles',
-      parent_id: null,
-    }),
-    models.categories.create({
-      name: 'Fashion',
-      parent_id: null,
-    }),
-  ]);
+        // ============================================================
+        // 3. CREATE CATEGORIES
+        // ============================================================
+        console.log("Creating Categories...");
 
-  const childCategories = await Promise.all([
-    models.categories.create({
-      name: 'Smartphones',
-      parent_id: parentCategories[0].category_id,
-    }),
-    models.categories.create({
-      name: 'Trading Cards',
-      parent_id: parentCategories[1].category_id,
-    }),
-  ]);
+        // Parent Categories
+        const electronics = await models.categories.create({ name: "Electronics" }, { transaction: t });
+        const collectibles = await models.categories.create({ name: "Collectibles" }, { transaction: t });
+        const others = await models.categories.create({ name: "Others" }, { transaction: t });
 
-  const allCategories = [...parentCategories, ...childCategories];
-  console.log('Creating categories... OK');
+        // Sub Categories (Atomic)
+        const smartphones = await models.categories.create({ name: "Smartphones", parent_id: electronics.category_id }, { transaction: t });
+        const laptops = await models.categories.create({ name: "Laptops", parent_id: electronics.category_id }, { transaction: t });
+        const tradingCards = await models.categories.create({ name: "Trading Cards", parent_id: collectibles.category_id }, { transaction: t });
+        const relics = await models.categories.create({ name: "Relics", parent_id: collectibles.category_id }, { transaction: t });
 
-  // ============================================
-  // 3. SEED PRODUCTS (24 products)
-  // ============================================
-  const productNames = [
-    'iPhone 15 Pro Max',
-    'Samsung Galaxy S24',
-    'MacBook Air M3',
-    'iPad Pro 12.9"',
-    'Google Pixel 8',
-    'Sony WH-1000XM5 Headphones',
-    'Apple Watch Series 9',
-    'Dell XPS 15 Laptop',
-    'Nintendo Switch OLED',
-    'PlayStation 5 Console',
-    'Vintage Comic Book Collection',
-    'Rare Pokémon Card - First Edition Charizard',
-    'Limited Edition Action Figures Set',
-    'Signed Baseball Card - Babe Ruth',
-    'Authentic Rolex Submariner Watch',
-    'Gucci Shoulder Bag',
-    'Louis Vuitton Monogram Crossbody',
-    'Hermès Silk Scarf',
-    'Chanel No. 5 Perfume Set',
-    'Vintage Leather Jacket',
-    'Supreme Hoodie Limited Release',
-    'Off-White Sneaker Collection',
-    'Vintage Vinyl Records Bundle',
-    'Art Deco Clock',
-  ];
+        // List of categories to assign products to
+        const atomicCategories = [smartphones, laptops, tradingCards, relics, others];
 
-  const productDescriptions = [
-    'Pristine condition, barely used, with all original accessories',
-    'Excellent working condition, some minor cosmetic wear',
-    'Like new, comes with original box and warranty',
-    'Used but well-maintained, fully functional',
-    'Great starter item for collectors',
-    'Authentic and certified, museum quality',
-    'Perfect for enthusiasts and professionals',
-    'Rare find in this condition',
-    'Highly sought after by collectors worldwide',
-    'Investment piece with appreciation potential',
-  ];
+        // ============================================================
+        // 4. CREATE PRODUCTS
+        // ============================================================
+        console.log("Creating 20 Products...");
+        const productsList = [];
+        const now = new Date();
+        const threeDaysLater = new Date(now); threeDaysLater.setDate(threeDaysLater.getDate() + 3);
 
-  const products = [];
-  const startDate = new Date();
-  const endDate = new Date(startDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+        for (let i = 1; i <= 20; i++) {
+            const category = atomicCategories[(i - 1) % atomicCategories.length]; // Round robin assignment
+            
+            const product = await models.products.create({
+                name: `Rare Item #${i} - ${category.name} Edition`,
+                seller_id: seller.user_id,
+                category_id: category.category_id,
+                price_start: 100.00,
+                price_step: 10.00,
+                price_current: 100.00, // Initial state
+                price_buy_now: 1000.00,
+                start_date: now,
+                end_date: threeDaysLater,
+                status: 'ACTIVE',
+                // Inline Associations for Images & Descriptions
+                product_descriptions: [
+                    { content: `Official description for Item #${i}.` },
+                    { content: "Mint condition, original packaging." },
+                    { content: "Fast shipping available." },
+                    { content: "Seller warranty included." }
+                ],
+                product_images: [
+                    { image_url: `https://placehold.co/600x400?text=Item+${i}+Main`, is_primary: true },
+                    { image_url: `https://placehold.co/600x400?text=Item+${i}+Side`, is_primary: false },
+                    { image_url: `https://placehold.co/600x400?text=Item+${i}+Back`, is_primary: false },
+                    { image_url: `https://placehold.co/600x400?text=Item+${i}+Detail`, is_primary: false }
+                ]
+            }, { 
+                transaction: t,
+                include: [
+                    { model: models.product_descriptions, as: 'product_descriptions' },
+                    { model: models.product_images, as: 'product_images' }
+                ]
+            });
+            productsList.push(product);
+        }
 
-  for (let i = 0; i < productNames.length; i++) {
-    const product = await models.products.create({
-      seller_id: sellerUser.user_id,
-      category_id: allCategories[Math.floor(Math.random() * allCategories.length)].category_id,
-      name: productNames[i],
-      price_start: 100 + i * 50,
-      price_step: 10,
-      price_buy_now: 1000 + i * 100,
-      price_current: 100 + i * 50,
-      start_date: new Date(startDate.getTime() + i * 60 * 60 * 1000),
-      end_date: new Date(endDate.getTime() + i * 60 * 60 * 1000),
-      is_auto_extend: true,
-      status: 'ACTIVE',
-    });
+        // COMMIT SETUP TRANSACTION
+        // We commit here because the AutoBidService might start its own transactions 
+        // or require the products to be visible in the DB to query them.
+        await t.commit(); 
+        console.log("Basic Data Created. Starting Simulation...");
 
-    await models.product_descriptions.create({
-      product_id: product.product_id,
-      content: productDescriptions[Math.floor(Math.random() * productDescriptions.length)],
-    });
+        // ============================================================
+        // 5. SIMULATE AUTO-BIDS via SERVICE
+        // ============================================================
+        console.log("Placing Auto-Bids using AutoBidService...");
 
-    products.push(product);
-  }
+        // For each product, we will have all 3 bidders place auto-bids.
+        // To ensure they are valid, we stagger their max_prices.
+        // Bidder 1: Max $200 -> Becomes Winner @ $100
+        // Bidder 2: Max $300 -> Becomes Winner @ $210 (outbids B1)
+        // Bidder 3: Max $500 -> Becomes Winner @ $310 (outbids B2)
 
-  console.log('Creating products... OK');
+        for (const product of productsList) {
+            console.log(`\n--- Bidding on Product ${product.product_id} ---`);
 
-  // ============================================
-  // 4. SEED BIDS (7 bids per product)
-  // ============================================
-  let totalBids = 0;
-  const bidsPerProduct = 7;
+            // Scenario: 3 Bidders with increasing Max Prices
+            const bidScenarios = [
+                { bidder: bidders[0], maxPrice: 200 },
+                { bidder: bidders[1], maxPrice: 300 },
+                { bidder: bidders[2], maxPrice: 500 }
+            ];
 
-  for (const product of products) {
-    let currentPrice = parseFloat(product.price_start);
+            for (const scenario of bidScenarios) {
+                try {
+                    // 1. Create the AutoBid Record
+                    // Service checks: Valid Product? Seller!=Bidder? Price Logic?
+                    await AutoBidService.createAutoBid(
+                        product.product_id,
+                        scenario.bidder.user_id,
+                        scenario.maxPrice
+                    );
 
-    for (let bidIndex = 0; bidIndex < bidsPerProduct; bidIndex++) {
-      currentPrice += parseFloat(product.price_step);
+                    // 2. Trigger the Calculation Logic
+                    // This is what generates the entry in the 'bids' table and updates 'products.price_current'
+                    // Your Service requires: productId, newBidderId, maxPrice
+                    await AutoBidService.calculateAutoBids(
+                        product.product_id,
+                        scenario.bidder.user_id,
+                        scenario.maxPrice
+                    );
+                    
+                    console.log(`   > ${scenario.bidder.full_name} placed auto-bid up to $${scenario.maxPrice}`);
+                } catch (error) {
+                    console.error(`   Failed to place bid for ${scenario.bidder.email}: ${error.message}`);
+                }
+            }
+        }
 
-      const randomBidder = bidders[Math.floor(Math.random() * bidders.length)];
+        // Update their original auto-bid max prices to simulate further bidding
+        // (Not required, but shows ability to update and re-calculate)
+        console.log("\nUpdating Auto-Bid Max Prices and Recalculating...");
+        for (const product of productsList) {
+            const updatedMaxPrices = [250, 400, 600]; // New max prices for bidders 1, 2, 3
+            for (let i = 0; i < bidders.length; i++) {
+                const bidder = bidders[i];
+                const newMax = updatedMaxPrices[i];
+                try {
+                    const autoBidRecord = await models.auto_bids.findOne({
+                        where: { product_id: product.product_id, bidder_id: bidder.user_id }
+                    });
+                    if (autoBidRecord) {
+                        autoBidRecord.max_price = newMax;
+                        await autoBidRecord.save();
+                        // Recalculate bids
+                        await AutoBidService.calculateAutoBids(
+                            product.product_id,
+                            bidder.user_id,
+                            newMax
+                        );
+                        console.log(`   > ${bidder.full_name} updated auto-bid to $${newMax}`);
+                    }
+                } catch (error) {
+                    console.error(`   Failed to update bid for ${bidder.email}: ${error.message}`);
+                }
+            }
+        }
 
-      const bidTime = new Date(
-        product.start_date.getTime() + (bidIndex + 1) * 2 * 60 * 60 * 1000
-      );
+        // FINAL LOG
+        console.log("\nDatabase Seeded Successfully!");
+        console.log(`   - Seller: ${seller.email}`);
+        console.log(`   - Password: Password123!`);
+        console.log(`   - Products: 20 active items`);
+        console.log(`   - Bidding: Processed via AutoBidService logic`);
+        
+        process.exit(0);
 
-      await models.bids.create({
-        product_id: product.product_id,
-        bidder_id: randomBidder.user_id,
-        amount: currentPrice,
-        status: 'VALID',
-        time: bidTime,
-      });
-
-      totalBids++;
+    } catch (error) {
+        // Only rollback if the main setup transaction failed.
+        // If error happened during bidding loop, setup is already committed (which is usually preferred for debugging).
+        if (t && !t.finished) await t.rollback();
+        
+        console.error("\n❌ Seeding Fatal Error:", error);
+        process.exit(1);
     }
-
-    await product.update({ price_current: currentPrice });
-  }
-
-  console.log('Creating bids... OK');
-
-  // ============================================
-  // 5. SEED AUTO BIDS
-  // ============================================
-  let autoBidCount = 0;
-  const productsForAutoBids = products.slice(0, 10);
-
-  for (const product of productsForAutoBids) {
-    for (let i = 0; i < 2; i++) {
-      const randomBidder = bidders[Math.floor(Math.random() * bidders.length)];
-      const maxPrice = parseFloat(product.price_current) + 500 + Math.random() * 500;
-
-      try {
-        await models.auto_bids.create({
-          product_id: product.product_id,
-          bidder_id: randomBidder.user_id,
-          max_price: maxPrice,
-        });
-        autoBidCount++;
-      } catch (err) {
-        // Ignore unique constraint violations
-      }
-    }
-  }
-
-  console.log('Creating auto bids... OK');
-
-  // ============================================
-  // 6. SEED PRODUCT IMAGES
-  // ============================================
-  const imageUrls = [
-    'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500',
-    'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500',
-    'https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=500',
-    'https://images.unsplash.com/photo-1491553895911-0055eca6402d?w=500',
-    'https://images.unsplash.com/photo-1484704849700-f032a568e944?w=500',
-    'https://images.unsplash.com/photo-1432139555190-58524dae6a55?w=500',
-    'https://images.unsplash.com/photo-1523293182086-7651a899d37f?w=500',
-  ];
-
-  let imageCount = 0;
-
-  for (const product of products) {
-    const imagesPerProduct = Math.floor(Math.random() * 3) + 1;
-
-    for (let i = 0; i < imagesPerProduct; i++) {
-      await models.product_images.create({
-        product_id: product.product_id,
-        image_url: imageUrls[Math.floor(Math.random() * imageUrls.length)],
-        is_primary: i === 0,
-      });
-      imageCount++;
-    }
-  }
-
-  console.log('Creating product images... OK');
-
-  // ============================================
-  // 7. SEED WATCHLISTS
-  // ============================================
-  let watchlistCount = 0;
-
-  for (const bidder of bidders) {
-    const watchCount = Math.floor(Math.random() * 3) + 3;
-    const shuffledProducts = products.sort(() => 0.5 - Math.random()).slice(0, watchCount);
-
-    for (const product of shuffledProducts) {
-      try {
-        await models.watchlists.create({
-          user_id: bidder.user_id,
-          product_id: product.product_id,
-        });
-        watchlistCount++;
-      } catch (err) {
-        // Ignore duplicates
-      }
-    }
-  }
-
-  console.log('Creating watchlists... OK');
-
-  // ============================================
-  // 8. SEED FEEDBACKS
-  // ============================================
-  let feedbackCount = 0;
-
-  const feedbackComments = [
-    'Great item, excellent condition!',
-    'Fast shipping, very satisfied',
-    'Exactly as described, would buy again',
-    'Outstanding seller, highly recommended',
-    'Perfect transaction, no issues',
-    'Item arrived safely and in perfect condition',
-    'Very responsive to questions',
-    'Authentic and high quality',
-    'Best auction experience ever',
-    'Trustworthy and reliable',
-  ];
-
-  for (const product of products) {
-    const feedbacksPerProduct = Math.floor(Math.random() * 2) + 2;
-
-    for (let i = 0; i < feedbacksPerProduct; i++) {
-      const randomBidder = bidders[Math.floor(Math.random() * bidders.length)];
-      const rating = Math.floor(Math.random() * 2) + 4;
-
-      try {
-        await models.feedbacks.create({
-          product_id: product.product_id,
-          from_user_id: randomBidder.user_id,
-          to_user_id: sellerUser.user_id,
-          rating: rating,
-          comment: feedbackComments[Math.floor(Math.random() * feedbackComments.length)],
-        });
-        feedbackCount++;
-      } catch (err) {
-        // Ignore duplicates
-      }
-    }
-  }
-
-  console.log('Creating feedbacks... OK');
-
-  // ============================================
-  // 9. SEED UPGRADE REQUESTS
-  // ============================================
-  let upgradeCount = 0;
-
-  const upgradeReasons = [
-    'I want to upgrade my account to Seller status to start selling items on the platform.',
-    'Interested in becoming a premium seller with enhanced features.',
-    'Ready to expand my business to the selling side.',
-    'Would like access to seller dashboard and analytics.',
-    'Requesting seller verification for my account.',
-  ];
-
-  const upgradeStatuses = ['PENDING', 'APPROVED', 'REJECTED'];
-
-  for (const bidder of bidders) {
-    const upgradeReqCount = Math.floor(Math.random() * 2);
-
-    for (let i = 0; i < upgradeReqCount; i++) {
-      await models.upgrade_requests.create({
-        user_id: bidder.user_id,
-        reason: upgradeReasons[Math.floor(Math.random() * upgradeReasons.length)],
-        status: upgradeStatuses[Math.floor(Math.random() * upgradeStatuses.length)],
-      });
-      upgradeCount++;
-    }
-  }
-
-  console.log('Creating upgrade requests... OK');
-
-  // Return summary data
-  return {
-    users: 6,
-    categories: 5,
-    products: products.length,
-    descriptions: products.length,
-    images: imageCount,
-    bids: totalBids,
-    autoBids: autoBidCount,
-    watchlists: watchlistCount,
-    feedbacks: feedbackCount,
-    upgrades: upgradeCount,
-  };
 };
 
-// Sequelize Seeder Format
-export default {
-  up: async (queryInterface, Sequelize) => {
-    try {
-      console.log('Starting database seeding...\n');
-      const summary = await seedData();
-
-      console.log('\n========================================');
-      console.log('Database seeding completed successfully!');
-      console.log('========================================');
-      console.log('Summary:');
-      console.log(`   - Users: ${summary.users} total`);
-      console.log(`   - Categories: ${summary.categories} total`);
-      console.log(`   - Products: ${summary.products} total`);
-      console.log(`   - Product Descriptions: ${summary.descriptions} total`);
-      console.log(`   - Product Images: ${summary.images} total`);
-      console.log(`   - Bids: ${summary.bids} total (7 per product)`);
-      console.log(`   - Auto Bids: ${summary.autoBids} total`);
-      console.log(`   - Watchlist Entries: ${summary.watchlists} total`);
-      console.log(`   - Feedbacks: ${summary.feedbacks} total`);
-      console.log(`   - Upgrade Requests: ${summary.upgrades} total`);
-      console.log('========================================\n');
-
-      console.log('Login Credentials:');
-      console.log('   Admin: admin@auction.com / password123');
-      console.log('   Seller: seller@auction.com / password123');
-      console.log('   Bidders: bidder[1-4]@auction.com / password123\n');
-    } catch (error) {
-      console.error('Seeding error:', error);
-      throw error;
-    }
-  },
-
-  down: async (queryInterface, Sequelize) => {
-    try {
-      console.log('Reversing seed...');
-      // Delete in reverse order of creation
-      await queryInterface.bulkDelete('upgrade_requests', null, {});
-      await queryInterface.bulkDelete('feedbacks', null, {});
-      await queryInterface.bulkDelete('watchlists', null, {});
-      await queryInterface.bulkDelete('product_images', null, {});
-      await queryInterface.bulkDelete('auto_bids', null, {});
-      await queryInterface.bulkDelete('bids', null, {});
-      await queryInterface.bulkDelete('product_descriptions', null, {});
-      await queryInterface.bulkDelete('products', null, {});
-      await queryInterface.bulkDelete('categories', null, {});
-      await queryInterface.bulkDelete('users', null, {});
-      console.log('Seed reversal completed successfully!');
-    } catch (error) {
-      console.error('Seed reversal error:', error);
-      throw error;
-    }
-  },
-};
+seedDatabase();

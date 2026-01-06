@@ -31,7 +31,17 @@ export const ProductCommentService = {
       ]
     });
   },
-
+  async findCommentById(commentId) {
+    return await models.product_comments.findByPk(commentId, {
+      include: [
+        {
+          model: models.users,
+          as: 'user',
+          attributes: ['user_id', 'full_name', 'positive_rating', 'negative_rating', 'created_at']
+        }
+      ]
+    });
+  },
   async createComment(productId, userId, content, parentId = null) {
     // 1. Verify Product exists
     const product = await models.products.findByPk(productId);

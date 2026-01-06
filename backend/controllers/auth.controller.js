@@ -26,11 +26,11 @@ const authController = {
             const {email, password} = req.body;
             const user = await UserService.findUserByEmail(email, true);
             if (user==null) {
-                return res.status(401).send({message: "Invalid username or password"})
+                return res.status(404).send({message: "Invalid username or password"})
             }
             const validPassword = await bcryptjs.compare(password, user.password_hash);
             if (!validPassword) {
-                return res.status(401).send({message: "Invalid username or password"})
+                return res.status(404).send({message: "Invalid username or password"})
             }
             const payload = {
                 user_id: user.user_id,
