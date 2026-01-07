@@ -12,6 +12,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Ban, Gavel, RefreshCw } from 'lucide-react'; // Added Refresh icon
 
 interface BiddingSectionProps {
+    startPrice: number;
     currentPrice: number;
     bidHistory: Bid[];
     onPlaceBid: (amount: number) => void;
@@ -22,6 +23,7 @@ interface BiddingSectionProps {
 }
 
 const BiddingSection = ({ 
+    startPrice,
     currentPrice, 
     bidHistory, 
     onPlaceBid, 
@@ -32,13 +34,13 @@ const BiddingSection = ({
 }: BiddingSectionProps) => {
     
     const [isFormOpen, setIsFormOpen] = useState(false);
-    const minBid = Number(currentPrice) + Number(step);
+    const minBid = currentPrice?Number(currentPrice) + Number(step): Number(startPrice) + Number(step);
 
     const bidSchema = z.object({
         product_id: z.number().optional(),
         max_price: z
             .number({ error: "Bid must be a number" })
-            .min(minBid, { message: `Bid must be at least $${minBid.toLocaleString()}` }),
+            .min(minBid, { message: `Bid must be at least ₫${minBid.toLocaleString()}` }),
     });
 
     type BidFormValues = z.infer<typeof bidSchema>;
@@ -97,7 +99,7 @@ const BiddingSection = ({
                         {currentAutoBid ? "Update your Auto-Bid !" : "Ready to place a bid?"}
                     </h3>
                     <p className="text-sm text-gray-500">
-                        Minimum required: <span className="font-bold text-gray-900">${minBid.toLocaleString()}</span>
+                        Minimum required: <span className="font-bold text-gray-900">₫{minBid.toLocaleString()}</span>
                     </p>
                 </div>
                 
@@ -106,7 +108,7 @@ const BiddingSection = ({
                     {currentAutoBid && (
                         <Badge variant="outline" className="h-12 px-4 flex items-center gap-2 bg-green-50 text-green-700 border-green-200 text-sm font-medium">
                             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                            Your Auto Bid: ${currentAutoBid.max_price.toLocaleString()}
+                            Your Auto Bid: ₫{currentAutoBid.max_price.toLocaleString()}
                         </Badge>
                     )}
 
@@ -141,7 +143,7 @@ const BiddingSection = ({
                         </span>
                         {currentAutoBid && (
                             <Badge variant="outline" className="bg-green-100 text-green-700 border-green-200">
-                                Current Max: ${currentAutoBid.max_price.toLocaleString()}
+                                Current Max: ₫{currentAutoBid.max_price.toLocaleString()}
                             </Badge>
                         )}
                     </CardTitle>
@@ -150,7 +152,7 @@ const BiddingSection = ({
                     <form onSubmit={handleSubmit(onSubmit)} className="flex w-full flex-col gap-5">
                         <div className="space-y-2 w-full">
                             <label className="text-sm font-medium text-gray-700">
-                                New Maximum Limit ($)
+                                New Maximum Limit (unit of ₫1000)
                             </label>
                             
                             <Input
@@ -230,7 +232,7 @@ const BiddingSection = ({
                         {new Date(bid.time).toLocaleString()}
                         </TableCell>
                         <TableCell className="text-right font-bold text-gray-900">
-                        ${Number(bid.amount).toLocaleString()}
+                        ₫{(Number(bid.amount)*1000).toLocaleString()}
                         </TableCell>
                     </TableRow>
                     ))

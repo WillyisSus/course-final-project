@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 import api from '@/lib/axios';
 import { 
   User, Mail, Shield, CheckCircle, XCircle, Edit, Lock, 
-  ArrowUpCircle, Clock, Check, AlertCircle 
+  ArrowUpCircle, Clock, 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

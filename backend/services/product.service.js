@@ -134,7 +134,7 @@ export const ProductService = {
       ...productData,
       seller_id: sellerId,
       status: 'ACTIVE',
-      price_current: productData.price_start, // start price is the current price initially
+      price_current: null, // start price is the current price initially
       start_date: productData.start_date || new Date(),
     };
 

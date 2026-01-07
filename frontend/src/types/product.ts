@@ -12,7 +12,10 @@ export interface ProductDescription {
 export interface Category {
   category_id: number;
   name: string;
+  parent_id?: number | null;
+  sub_categories: Category[]; 
 }
+
 
 export interface User {
   user_id: number;
@@ -46,10 +49,10 @@ export interface Product {
   status: 'ACTIVE' | 'SOLD' | 'EXPIRED';
   tsv?: string;
   bid_count?: number;
-  product_descriptions?: ProductDescription[];
-  product_images?: ProductImage[];
-  category?: Category;
-  seller?: User;
+  product_descriptions: ProductDescription[];
+  product_images: ProductImage[];
+  category: Category;
+  seller: User;
   winner?: User;
 }
 

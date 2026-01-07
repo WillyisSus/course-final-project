@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router'; 
 import { formatTimeLeft } from '../lib/utils';
 import { io, Socket } from 'socket.io-client';
-import { Clock, User as UserIcon, Tag, HandCoinsIcon, ClipboardList, Pencil } from 'lucide-react';
+import { Clock, User as UserIcon, Tag, HandCoinsIcon, Pencil, TextQuoteIcon } from 'lucide-react';
 import { toast } from 'sonner'; // Ensure you have this installed, or remove toast calls
 import api from '@/lib/axios';
 // Components
@@ -83,7 +83,7 @@ const ProductDetailPage = () => {
         const fetchCurrentAutoBid = async () => {
             try {
                 const res = await api.get(`/auto-bids?product_id=${id}`);
-                setCurrentAutoBid(res.data.data || null);
+                setCurrentAutoBid(res.data.data[0]   || null);
             } catch (error) {
                 console.error("Failed to load current auto bid", error);
                 setCurrentAutoBid(null);
@@ -236,7 +236,7 @@ const ProductDetailPage = () => {
                             <p className={`text-4xl font-black transition-all duration-500 ${
                                 priceChanged ? 'text-green-600 scale-110 origin-left' : 'text-blue-600'
                             }`}>
-                                ${Number(product.price_current).toLocaleString()}
+                                {product.price_current ? `₫${(Number(product.price_current)*1000).toLocaleString()}` : 'No bids yet'}
                             </p>
                         </div>
 
@@ -253,16 +253,20 @@ const ProductDetailPage = () => {
                             {product.price_buy_now && (
                                 <div className='w-full flex items-center justify-between'>
                                     <span className="text-sm font-medium text-gray-600">Buy Now Price</span>
-                                    <span className="text-xl font-bold text-gray-900">${Number(product.price_buy_now).toLocaleString()}</span>
+                                    <span className="text-xl font-bold text-gray-900">₫{(Number(product.price_buy_now)*1000).toLocaleString()}</span>
                                 </div>
                             )}
                             <div className='w-full flex items-center justify-between'>
+                                <span className="text-sm font-medium text-gray-600">Start</span>
+                                <span className="text-xl font-bold text-gray-900">₫{(Number(product.price_start)*1000).toLocaleString()}</span>
+                            </div>
+                            <div className='w-full flex items-center justify-between'>
                                 <span className="text-sm font-medium text-gray-600">Step</span>
-                                <span className="text-xl font-bold text-gray-900">${Number(product.price_step).toLocaleString()}</span>
+                                <span className="text-xl font-bold text-gray-900">₫{(Number(product.price_step)*1000).toLocaleString()}</span>
                             </div>
                             <div className='w-full flex items-center justify-between'>
                                 <span className="text-sm font-medium text-gray-600">Highest Bidder</span>
-                                <span className="text-xl font-bold text-gray-900">{(product?.winner?.full_name)}</span>
+                                <span className="text-xl font-bold text-gray-900">{product.winner_id ? (product?.winner?.full_name) : "No Winner yet"}</span>
                             </div>
                     </div>
 
@@ -293,10 +297,18 @@ const ProductDetailPage = () => {
             </div>
         </div>
 
-        {/* DESCRIPTION SECTION (Unchanged) */}
-        {/* ... */}
         <div className="bg-white border border-gray-200 rounded-xl p-6 lg:p-8 shadow-sm space-y-4">
-             {/* ... description code ... */}
+            <h2 className="text-2xl font-bold border-b pb-4 text-gray-900">Description</h2>
+            <div className='bg-grey-200 border border-gray-200 w-full h-[80%] scroll-y-auto p-4 rounded-md'>
+                 {product.product_descriptions?.length > 0 ? product.product_descriptions?.map((desc, index) => (
+                    <p key={index} className="text-gray-700 mb-4 whitespace-pre-line">{desc.content}</p>
+                 )): (
+                    <div className="flex flex-col items-center justify-center py-8 text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                        <TextQuoteIcon className="w-8 h-8 mb-2 opacity-50" />
+                        <p className="italic">The seller forgot to add some detail...</p>
+                    </div>
+                 )}
+            </div>
         </div>
 
         {/* BIDDING SECTION */}
@@ -307,6 +319,7 @@ const ProductDetailPage = () => {
             </div>
 
             <BiddingSection 
+                startPrice={Number(product.price_start)}
                 currentPrice={Number(product.price_current)}
                 bidHistory={bidsHistory || []}
                 onPlaceBid={handlePlaceBid}

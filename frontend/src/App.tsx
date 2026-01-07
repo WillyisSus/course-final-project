@@ -11,6 +11,7 @@ import ProductListPage from './pages/ProductListPage'
 import ProductDetailPage from './pages/ProductDetailsPage'
 import { Toaster } from './components/ui/sonner'
 import PersonalProfilePage from './pages/PersonalProfilePage'
+import UploadProductPage from './pages/UploadProductPage'
 const router = createBrowserRouter([
   {
     path:"",
@@ -28,6 +29,9 @@ const router = createBrowserRouter([
       }, {
         path: "profile",
         Component: PersonalProfilePage
+      }, {
+        path: "upload",
+        Component: UploadProductPage
       }
 
     ]

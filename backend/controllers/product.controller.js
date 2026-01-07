@@ -1,5 +1,6 @@
 import { ProductService } from "../services/product.service.js";
 import { ProductCommentService } from "../services/productComments.service.js";
+import { ProductDescriptionService } from "../services/productDescription.service.js";
 import { ProductImageService } from "../services/productImages.service.js";
 const productController = {
     // GET /api/products
@@ -56,30 +57,31 @@ const productController = {
     },
 
     postOne: async (req, res) => {
-    try {
-        const sellerId = req.user?.user_id || 1; 
-        if (!req.files || req.files.length === 0) {
-            return res.status(400).json({ message: "At least one product image is required." });
-        }
-        if (req.files.length > 4) {
-            return res.status(400).json({ message: "Maximum 4 images allowed." });
-        }
-        const newProduct = await ProductService.createProduct(req.body, sellerId);
-        const imagePromises = req.files.map((file, index) => {
-            const imageUrl = `/images/${file.filename}`;
-            const isPrimary = index === 0;
-            return ProductImageService.createImage(
-            newProduct.product_id, 
-            sellerId, 
-            imageUrl, 
-            isPrimary
-            );
-        });
-        await Promise.all(imagePromises);
-        res.status(201).json({ 
-            message: "Product and images created successfully", 
-            data: newProduct 
-        });
+        try {
+            const sellerId = req.user?.user_id || 1; 
+            if (!req.files || req.files.length === 0) {
+                return res.status(400).json({ message: "At least one product image is required." });
+            }
+            if (req.files.length > 4) {
+                return res.status(400).json({ message: "Maximum 4 images allowed." });
+            }
+            const newProduct = await ProductService.createProduct(req.body, sellerId);
+            const imagePromises = req.files.map((file, index) => {
+                const imageUrl = `http://localhost:3000/images/${file.filename}`;
+                const isPrimary = index === 0;
+                return ProductImageService.createImage(
+                newProduct.product_id, 
+                sellerId, 
+                imageUrl, 
+                isPrimary
+                );
+            });
+            const product = await ProductDescriptionService.createDescription(newProduct.product_id, sellerId, req.body.description)
+            await Promise.all(imagePromises);
+            res.status(201).json({ 
+                message: "Product and images created successfully", 
+                data: newProduct 
+            });
 
         } catch (error) {
             console.error("Error in postOne:", error);

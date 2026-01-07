@@ -55,7 +55,7 @@ const autoBidController = {
                 const calculateNewBids = await AutoBidService.calculateAutoBids(product_id, bidderId, max_price);
                 if (calculateNewBids){
                     resData.bidUpdates = calculateNewBids;
-                    const updatedProduct = await ProductService.getProductById(product_id);
+                    const updatedProduct = await ProductService.findProductDetail(product_id);
                     const io = req.app.get('io')
                     io.to(`product_${product_id}`).emit('product_updated', {
                         type: 'BID_PLACED',

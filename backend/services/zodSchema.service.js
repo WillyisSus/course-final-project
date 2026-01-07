@@ -45,7 +45,8 @@ export const createProductSchema = z.object({
   // start_date is optional because Service defaults it to NOW if missing
   start_date: z.coerce.date().optional(), 
   end_date: z.coerce.date(),
-  is_auto_extend: z.boolean().optional().default(false),
+  is_auto_extend: z.coerce.boolean().optional().default(false),
+  description: z.string().min(10, "Description too short"),
   // description/images are often handled in separate endpoints or separate fields in a multipart form
 }).refine((data) => {
     // Logic: End date must be after start date (or now)
@@ -64,6 +65,11 @@ export const updateProductSchema = z.object({
   price_buy_now: decimalSchema.optional(),
   end_date: z.coerce.date().optional(),
   is_auto_extend: z.boolean().optional(),
+});
+
+export const addDescriptionSchema = z.object({
+  product_id: idSchema,
+  content: z.string().min(10, "Description too short"), //
 });
 
 /**

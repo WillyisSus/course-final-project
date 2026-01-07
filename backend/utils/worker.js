@@ -51,7 +51,7 @@ const checkExpiredAuctions = async () => {
                     as: 'bids',
                     include: [{ 
                         model: models.users, 
-                        as: 'user', // Ensure this alias matches your Bid model association (e.g., 'user' or 'bidder')
+                        as: 'bidder', // Ensure this alias matches your Bid model association (e.g., 'user' or 'bidder')
                         attributes: ['user_id', 'email', 'full_name'] 
                     }]
                 }

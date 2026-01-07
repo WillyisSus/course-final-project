@@ -5,7 +5,7 @@ import { logOut } from '../store/slices/authSlice';
 import api from '../lib/axios';
 
 // Icons & UI
-import { Search, LogIn, User, ChevronDown, LogOut, ShoppingBag, LayoutDashboard, ListOrdered, Gavel, GavelIcon, HandCoinsIcon } from 'lucide-react';
+import { Search, LogIn, User, ChevronDown, LogOut, ShoppingBag, LayoutDashboard, ListOrdered, Gavel, GavelIcon, HandCoinsIcon, PlusCircleIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
@@ -131,55 +131,68 @@ const Navbar = () => {
         {/* --- RIGHT SECTION (Auth) --- */}
         <div className="flex items-center gap-4">
           {isAuthenticated && user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center gap-2 px-2 hover:bg-blue-50">
-                  <Avatar className="h-8 w-8 border border-blue-100">
-                    <AvatarFallback className="bg-blue-100 text-blue-700 text-xs font-bold">
-                      {user.full_name?.charAt(0) || "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="hidden md:flex flex-col items-start text-xs">
-                    <span className="font-bold text-blue-600 uppercase tracking-wider text-[10px]">
-                      {user.role}
-                    </span>
-                    <span className="font-medium text-gray-700 max-w-[100px] truncate">
-                      {user.full_name}
-                    </span>
-                  </div>
-                  <ChevronDown className="w-3 h-3 text-gray-400" />
-                </Button>
-              </DropdownMenuTrigger>
-
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild className="cursor-pointer gap-2">
-                  <Link to={"/profile"}>
-                    <User className="w-4 h-4" /> Profile
+            
+            <> 
+              {user.role === 'SELLER' && 
+              (
+                <Button className='flex items-center gap-2 px-2 bg-primary '>
+                  <Link to="/upload" className="flex items-center gap-2">
+                    <PlusCircleIcon className="w-4 h-4" />
+                    Upload
                   </Link>
-                </DropdownMenuItem>
-                {user.role === 'SELLER' && (
-                  <DropdownMenuItem className="cursor-pointer gap-2">
-                    <LayoutDashboard className="w-4 h-4" /> My Listings
+                </Button>
+              )}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex items-center gap-2 px-2 hover:bg-blue-50">
+                    <Avatar className="h-8 w-8 border border-blue-100">
+                      <AvatarFallback className="bg-blue-100 text-blue-700 text-xs font-bold">
+                        {user.full_name?.charAt(0) || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="hidden md:flex flex-col items-start text-xs">
+                      <span className="font-bold text-blue-600 uppercase tracking-wider text-[10px]">
+                        {user.role}
+                      </span>
+                      <span className="font-medium text-gray-700 max-w-[100px] truncate">
+                        {user.full_name}
+                      </span>
+                    </div>
+                    <ChevronDown className="w-3 h-3 text-gray-400" />
+                  </Button>
+                </DropdownMenuTrigger>
+
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild className="cursor-pointer gap-2">
+                    <Link to={"/profile"}>
+                      <User className="w-4 h-4" /> Profile
+                    </Link>
                   </DropdownMenuItem>
-                )}
-                <DropdownMenuItem className="cursor-pointer gap-2">
-                  <ListOrdered className="w-4 h-4" /> Bidding History
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem 
-                  className="text-red-600 focus:text-red-600 cursor-pointer gap-2 bg-red-50/50"
-                  onClick={() => {
-                    dispatch(logOut());
-                    navigate('/login');
-                  }}
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span>Log out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  {user.role === 'SELLER' && (
+                    <DropdownMenuItem className="cursor-pointer gap-2">
+                      <LayoutDashboard className="w-4 h-4" /> My Listings
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem className="cursor-pointer gap-2">
+                    <ListOrdered className="w-4 h-4" /> Bidding History
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    className="text-red-600 focus:text-red-600 cursor-pointer gap-2 bg-red-50/50"
+                    onClick={() => {
+                      dispatch(logOut());
+                      navigate('/login');
+                    }}
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>Log out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
+            
           ) : (
             <Link to="/login">
               <Button className="bg-blue-600 hover:bg-blue-700 shadow-sm gap-2">

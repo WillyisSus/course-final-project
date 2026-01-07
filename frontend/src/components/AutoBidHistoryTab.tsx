@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import api from '@/lib/axios';
-import { Gavel, ExternalLink, Clock, CheckCircle, XCircle, AlertTriangle, HandCoinsIcon } from 'lucide-react';
+import { ExternalLink, Clock, CheckCircle, XCircle, AlertTriangle, HandCoinsIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';

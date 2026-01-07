@@ -131,7 +131,7 @@ const ProductCardHorizontal = ({ product }: ProductCardHorizontalProps) => {
                 <span className="text-xs text-slate-400 uppercase font-semibold">Highest Bidder:</span>
                 <Avatar className="w-6 h-6 border border-slate-200">
                     <AvatarFallback className="text-[10px] bg-slate-100 text-slate-500">
-                        {product.winner ? product.winner.full_name.charAt(0) : "?"}
+                        {product.winner ? product.winner.full_name.charAt(0) : "No Winner yet"}
                     </AvatarFallback>
                 </Avatar>
                 <span className="text-sm font-medium text-slate-700">
@@ -149,7 +149,7 @@ const ProductCardHorizontal = ({ product }: ProductCardHorizontalProps) => {
              <div>
                <p className="text-xs text-muted-foreground uppercase mb-1">Current Bid</p>
                <p className="text-2xl font-black text-blue-700">
-                 ${Number(product.price_current).toLocaleString()}
+                 {product.price_current? "₫"+(Number(product.price_current)*1000).toLocaleString() : "No bids yet"}
                </p>
              </div>
              
@@ -157,7 +157,7 @@ const ProductCardHorizontal = ({ product }: ProductCardHorizontalProps) => {
                <div>
                  <p className="text-xs text-muted-foreground uppercase mb-1">Buy Now</p>
                  <p className="text-sm font-semibold text-slate-600">
-                   ${Number(product.price_buy_now).toLocaleString()}
+                   ₫{Number(product.price_buy_now).toLocaleString()}
                  </p>
                </div>
              )}
