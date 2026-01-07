@@ -179,7 +179,7 @@ const CommentSection = ({ comments, onPostComment, isOwner = false }: CommentSec
                         Replying to <span className="font-bold">{replyingTo.user.full_name}: {replyingTo.content}</span>
                     </span>
                 </span>
-                <button onClick={() => setReplyingTo(null)} className="hover:bg-blue-100 p-1 rounded flex-shrink-0">
+                <button onClick={() => setReplyingTo(null)} className="hover:bg-blue-100 p-1 rounded shrink-0">
                     <X className="w-4 h-4" />
                 </button>
             </div>

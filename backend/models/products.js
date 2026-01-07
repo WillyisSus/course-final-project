@@ -67,6 +67,11 @@ export default class products extends Model {
       allowNull: true,
       defaultValue: false
     },
+    allow_first_time_bidder: {
+      type: DataTypes.BOOLEAN,
+      allowNull: true,
+      defaultValue: true
+    },
     status: {
       type: DataTypes.ENUM("ACTIVE","SOLD","EXPIRED"),
       allowNull: true,

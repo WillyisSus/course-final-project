@@ -33,7 +33,8 @@ const formSchema = z.object({
         message: "End date must be in the future"
     }),
     description: z.string().min(10, "Description must be at least 10 characters"),
-    is_auto_extend: z.boolean().default(false)
+    is_auto_extend: z.boolean().default(false),
+    allow_first_time_bidder: z.boolean().default(true),
 });
 
 type ProductFormValues = z.infer<typeof formSchema>;
@@ -61,6 +62,7 @@ const UploadProductPage = () => {
             price_step: 0,
             description: "",
             is_auto_extend: false,
+            allow_first_time_bidder: true,
             end_date: "",
             // price_buy_now is optional, so it's okay to omit, 
             // or you can set it to undefined/"" if needed.
@@ -329,6 +331,26 @@ const UploadProductPage = () => {
                                             <FormLabel>Enable Auto-Extend</FormLabel>
                                             <FormDescription>
                                                 Auction extends by 10 minutes if a bid is placed in the last 5 minutes.
+                                            </FormDescription>
+                                        </div>
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="allow_first_time_bidder"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                                        <FormControl>
+                                            <Checkbox
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                            />
+                                        </FormControl>
+                                        <div className="space-y-1 leading-none">
+                                            <FormLabel>Allow First-time Bidders</FormLabel>
+                                            <FormDescription>
+                                                Permit bidders without prior bids to participate in this auction.
                                             </FormDescription>
                                         </div>
                                     </FormItem>

@@ -26,6 +26,14 @@ export default class messages extends Model {
         key: 'user_id'
       }
     },
+    product_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'products',
+          key: 'product_id'
+        }
+    },
     content: {
       type: DataTypes.TEXT,
       allowNull: true

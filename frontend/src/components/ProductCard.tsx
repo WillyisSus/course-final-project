@@ -93,7 +93,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
             <div>
               <p className="text-xs text-muted-foreground mb-0.5">Current Bid</p>
               <p className="text-lg font-bold text-blue-700">
-                {product.price_current? "₫"+(Number(product.price_current)*1000).toLocaleString() : "No bids yet"}
+                {product.price_current? "₫"+(Number(product.price_current)*1000).toLocaleString() : "No bids"}
               </p>
             </div>
             {product.price_buy_now && (

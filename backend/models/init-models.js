@@ -13,6 +13,7 @@ import _users from  "./users.js";
 import _watchlists from  "./watchlists.js";
 import _product_comments from "./product_comments.js";
 import _messages from "./messages.js";
+import _product_receipts from "./product_receipts.js"
 export default function initModels(sequelize) {
   const auto_bids = _auto_bids.init(sequelize, DataTypes);
   const bids = _bids.init(sequelize, DataTypes);
@@ -27,6 +28,7 @@ export default function initModels(sequelize) {
   const watchlists = _watchlists.init(sequelize, DataTypes);
   const product_comments = _product_comments.init(sequelize, DataTypes);
   const messages = _messages.init(sequelize, DataTypes);
+  const product_receipts = _product_receipts.init(sequelize, DataTypes);
   products.belongsToMany(users, { as: 'user_id_users', through: blocked_bidders, foreignKey: "product_id", otherKey: "user_id" });
   products.belongsToMany(users, { as: 'user_id_users_watchlists', through: watchlists, foreignKey: "product_id", otherKey: "user_id" });
   users.belongsToMany(products, { as: 'product_id_products', through: blocked_bidders, foreignKey: "user_id", otherKey: "product_id" });
@@ -77,6 +79,12 @@ export default function initModels(sequelize) {
   users.hasMany(messages, { as: "sent_messages", foreignKey: "sender_id"});
   messages.belongsTo(users, { as: "receiver", foreignKey: "receiver_id"});
   users.hasMany(messages, { as: "received_messages", foreignKey: "receiver_id"});
+  products.hasOne(product_receipts, { as: "receipt", foreignKey: "product_id"});
+  product_receipts.belongsTo(products, { as: "product", foreignKey: "product_id"});
+  users.hasMany(product_receipts, { as: "buyer_receipts", foreignKey: "buyer_id"});
+  product_receipts.belongsTo(users, { as: "buyer", foreignKey: "buyer_id"});
+  users.hasMany(product_receipts, { as: "seller_receipts", foreignKey: "seller_id"});
+  product_receipts.belongsTo(users, { as: "seller", foreignKey: "seller_id"});
   return {
     auto_bids,
     bids,
@@ -91,5 +99,6 @@ export default function initModels(sequelize) {
     watchlists,
     messages,
     product_comments,
+    product_receipts
   };
 }

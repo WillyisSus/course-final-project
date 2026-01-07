@@ -47,6 +47,7 @@ export const createProductSchema = z.object({
   end_date: z.coerce.date(),
   is_auto_extend: z.coerce.boolean().optional().default(false),
   description: z.string().min(10, "Description too short"),
+  allow_first_time_bidder: z.coerce.boolean().optional().default(true),
   // description/images are often handled in separate endpoints or separate fields in a multipart form
 }).refine((data) => {
     // Logic: End date must be after start date (or now)
