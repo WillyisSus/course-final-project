@@ -21,3 +21,17 @@ export interface AutoBid {
   max_price: string;
   created_at: string;
 }
+
+export interface AutoBidHistoryItem {
+    auto_bid_id: number;
+    max_price: number;
+    created_at: string;
+    product: {
+        product_id: number;
+        name: string;
+        price_current: number;
+        status: 'ACTIVE' | 'SOLD' | 'EXPIRED';
+        end_date: string;
+        winner_id?: number;
+    };
+}

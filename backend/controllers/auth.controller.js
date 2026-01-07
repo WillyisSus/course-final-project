@@ -43,7 +43,7 @@ const authController = {
                 accessToken, 
                 user: 
                 {
-                    id: user.user_id, 
+                    user_id: user.user_id, 
                     role: user.role, 
                     email: user.email, 
                     full_name: user.full_name, 
@@ -131,16 +131,18 @@ const authController = {
             const body = req.body;
             console.log("Auth Header:", authHeader)
             const token = authHeader && authHeader.split(' ')[1];
-            console.log("Refresh Token Request Body:", token);   
+            console.log("Refresh Token Request Body:", body);   
             // Find user from expired access token
             if (token == null) {
                 return res.status(401).json({ message: 'Access Denied. Token missing.' });
             }
+            // Require client to send the expired access token
             const accessTokenPayload = jwt.decode(token);
             console.log("Decoded Access Token Payload:", accessTokenPayload);
             if (!accessTokenPayload.user_id) {
                 return res.status(401).json({ message: 'Invalid token. User ID missing.' });
             }
+            // Get access token from database
             const refreshToken = await UserService.getRefreshTokenByUserId(accessTokenPayload.user_id);
             const decodedPayload = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, decoded) => {
                 if (err) {
@@ -151,7 +153,7 @@ const authController = {
             });
             console.log("Decoded Payload from Refresh Token:", decodedPayload);
             const newPayload = {
-                user_id: decodedPayload.userId,
+                user_id: decodedPayload.user_id,
                 role: decodedPayload.role,
             }
             const newAccessToken = await generateToken.generateAccessToken(newPayload);

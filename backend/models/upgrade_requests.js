@@ -26,6 +26,11 @@ export default class upgrade_requests extends Model {
       type: DataTypes.ENUM("PENDING","APPROVED","REJECTED"),
       allowNull: true,
       defaultValue: "PENDING"
+    },
+    created_at: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
     }
   }, {
     sequelize,

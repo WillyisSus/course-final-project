@@ -19,6 +19,8 @@ import bidRouter from './routes/bid.route.js';
 import productCommentsRouter from './routes/productComments.route.js';
 import messageRouter from './routes/messages.route.js';
 import startWorker from './utils/worker.js';
+import watchlistRouter from './routes/watchlist.route.js';
+import upgradeRequestRouter from './routes/upgradeRequest.route.js';
 
 const PORT = 3000;
 configDotenv();
@@ -85,7 +87,8 @@ app.use('/api/auto-bids', autoBidRouter);
 app.use('/api/bids', bidRouter);
 app.use('/api/comments', productCommentsRouter);
 app.use('/api/messages', messageRouter);
-
+app.use('/api/watchlists', watchlistRouter)
+app.use('/api/upgrade-requests', upgradeRequestRouter)
 const retryConnection = async (retriesLeft, delay) => {
     try {
         await sequelize.authenticate();

@@ -20,17 +20,17 @@ const upgradeRequestController = {
         }
     },
 
-    // GET /api/upgrade-requests/:id
+    // GET /api/upgrade-requests?user_id=123
     // Admin: View details of a specific request
     getOne: async (req, res) => {
         try {
-            // Note: If findRequestById isn't in your service, 
-            // you might need to add it or use findAllUpgradeRequests filtering by ID logic.
-            // Assuming we add a simple lookup helper:
-            // const request = await models.upgrade_requests.findByPk(req.params.id); 
-            // OR use the Service if implemented.
-            
-            // For now, returning 501 as this is rarely used (Admins usually view the list)
+            const {user_id} = req.query;
+            if (!user_id) {
+                return res.status(400).json({ 
+                    message: "user_id query parameter is required." 
+                });
+            }
+            const request = await UpgradeRequestService.findUpgradeRequestById(user_id)
             res.status(501).json({ message: "Single request view not implemented yet" });
         } catch (error) {
             res.status(500).json({ message: error.message });

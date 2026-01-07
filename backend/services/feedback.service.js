@@ -36,14 +36,25 @@ export const FeedbackService = {
     if (!isWinner && !isSeller) {
       throw new Error('You cannot leave feedback for a product you were not involved with.');
     }
-
-    return await models.feedbacks.create({
+    const newFeedback = await models.feedbacks.create({
       product_id,
       from_user_id,
       to_user_id,
       rating,
       comment
     });
+    const toUser = await models.users.findByPk(to_user_id);
+    if (toUser) {
+      // Update the user's average rating
+      if (rating < 0){
+        toUser.negative_rating += 1;
+      } else {
+        toUser.positive_rating += 1;
+      }
+      await toUser.save();
+    }
+    return newFeedback;
+
   },
 
   // Usually users can't update feedback, but Admins might need to censor it

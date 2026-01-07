@@ -180,8 +180,23 @@ export const AutoBidService = {
     });
   },
   async findAutoBidOfUserForProduct(productId, bidderId) {
-    return await models.auto_bids.findOne({
-      where: { product_id: productId, bidder_id: bidderId }
+    const whereClause = {};
+    const includeClause = [];
+    if (productId) {
+      whereClause.product_id = productId;
+    }else{
+      includeClause.push({
+        model: models.products,
+        as: 'product', //
+        attributes: ['name', 'product_id', 'price_current', 'end_date', 'status', 'end_date', 'winner_id'],
+      });
+    }
+    if (bidderId) {
+      whereClause.bidder_id = bidderId;
+    }
+    return await models.auto_bids.findAll({
+      where: whereClause,
+      include: includeClause
     });
   },
 

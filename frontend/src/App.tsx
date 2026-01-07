@@ -10,6 +10,7 @@ import VerifyOtpPage from './pages/VerifyOTPPage'
 import ProductListPage from './pages/ProductListPage'
 import ProductDetailPage from './pages/ProductDetailsPage'
 import { Toaster } from './components/ui/sonner'
+import PersonalProfilePage from './pages/PersonalProfilePage'
 const router = createBrowserRouter([
   {
     path:"",
@@ -24,6 +25,9 @@ const router = createBrowserRouter([
       }, {
         path: "products/:id",
         Component: ProductDetailPage
+      }, {
+        path: "profile",
+        Component: PersonalProfilePage
       }
 
     ]

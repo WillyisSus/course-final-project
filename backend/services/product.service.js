@@ -11,7 +11,8 @@ export const ProductService = {
     sortBy = 'end_date', 
     sortOrder = 'ASC',
     status = 'ACTIVE',
-    category= null // <--- NEW: Defaults to ACTIVE
+    category= null, // <--- NEW: Defaults to ACTIVE
+    sellerId = null
   } = {}) {
     console.log('Search Query:', searchQuery);
     const whereClause = {};
@@ -30,6 +31,9 @@ export const ProductService = {
     }
     if (category){
       whereClause.category_id = category
+    }
+    if (sellerId){
+      whereClause.seller_id = sellerId
     }
     let orderClause = [];
     if (sortBy === 'bid_count') {

@@ -25,9 +25,10 @@ export interface ProductComment{
   product_id: number;
   user_id: number;
   content: string;
-  parentid: number | null;
+  parent_id: number | null;
   created_at: string;
   user: User;
+  replies?: ProductComment[];
 }
 export interface Product {
   product_id: number;

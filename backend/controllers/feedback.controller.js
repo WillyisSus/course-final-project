@@ -11,9 +11,7 @@ const feedbackController = {
                     message: "user_id query parameter is required to fetch feedbacks." 
                 });
             }
-
             const feedbacks = await FeedbackService.findAllFeedbacksByUser(user_id);
-            
             res.json({ 
                 message: `Feedbacks for user ${user_id} retrieved`, 
                 data: feedbacks 

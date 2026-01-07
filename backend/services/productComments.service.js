@@ -13,7 +13,7 @@ export const ProductCommentService = {
         {
           model: models.users,
           as: 'user', // The person asking
-          attributes: ['user_id', 'full_name']
+          attributes: ['user_id', 'full_name', 'role','positive_rating', 'negative_rating', 'created_at']
         },
         {
           model: models.product_comments,
@@ -21,7 +21,7 @@ export const ProductCommentService = {
           include: [{
              model: models.users,
              as: 'user', // The person replying
-             attributes: ['user_id', 'full_name', 'role'] // Role helps show 'SELLER' tag
+             attributes: ['user_id', 'full_name', 'positive_rating', 'role','negative_rating', 'created_at'] // Role helps show 'SELLER' tag
           }]
         }
       ],
@@ -34,10 +34,19 @@ export const ProductCommentService = {
   async findCommentById(commentId) {
     return await models.product_comments.findByPk(commentId, {
       include: [
-        {
+       {
           model: models.users,
-          as: 'user',
+          as: 'user', // The person asking
           attributes: ['user_id', 'full_name', 'positive_rating', 'negative_rating', 'created_at']
+        },
+        {
+          model: models.product_comments,
+          as: 'replies', // The seller's answer(s)
+          include: [{
+             model: models.users,
+             as: 'user', // The person replying
+             attributes: ['user_id', 'full_name', 'positive_rating', 'role','negative_rating', 'created_at'] // Role helps show 'SELLER' tag
+          }]
         }
       ]
     });

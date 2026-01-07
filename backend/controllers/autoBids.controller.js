@@ -27,12 +27,18 @@ const autoBidController = {
         try {
             const { product_id} = req.query;
             const bidderId = req.user.user_id;
+            if (bidderId === undefined) {
+                return res.status(401).json({ 
+                    message: "Something wrong happened when checking user info." 
+                });
+            }
             const autoBids = await AutoBidService.findAutoBidOfUserForProduct(product_id, bidderId);
             res.json({
                 message: "Auto-bids for user retrieved",
                 data: autoBids
             });
         } catch (error) {
+            console.error("Error in getAutoBidOfUserForProduct:", error);
             res.status(500).json({ message: error.message });
         }
     },

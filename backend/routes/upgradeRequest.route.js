@@ -7,6 +7,7 @@ import { createUpgradeRequestSchema } from "../services/zodSchema.service.js";
 const upgradeRequestRouter = Router();
 
 upgradeRequestRouter.get('/', authController.checkAuth, upgradeRequestController.getAll);
+upgradeRequestRouter.get('/', authController.checkAuth, upgradeRequestController.getOne);  
 upgradeRequestRouter.post('/', authController.checkAuth, validate(createUpgradeRequestSchema), upgradeRequestController.postOne);
 upgradeRequestRouter.put('/:id', authController.checkAuth, upgradeRequestController.putOne);
 upgradeRequestRouter.delete('/:id', authController.checkAuth, upgradeRequestController.deleteOne);

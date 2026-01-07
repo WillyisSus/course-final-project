@@ -14,7 +14,8 @@ const productController = {
                 sortBy: req.query.sort || 'end_date', 
                 sortOrder: req.query.order || 'ASC', 
                 category: req.query.category || null, 
-                status: req.query.status || 'ACTIVE'
+                status: req.query.status || 'ACTIVE',
+                sellerId: req.query.seller_id || null
             };
             const { count, rows } = await ProductService.findAllProducts({ 
                 limit, 

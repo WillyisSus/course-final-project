@@ -9,7 +9,7 @@ import type { AutoBid, Bid } from '@/types/bid';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Gavel, RefreshCw } from 'lucide-react'; // Added Refresh icon
+import { Ban, Gavel, RefreshCw } from 'lucide-react'; // Added Refresh icon
 
 interface BiddingSectionProps {
     currentPrice: number;
@@ -18,6 +18,7 @@ interface BiddingSectionProps {
     currentAutoBid?: AutoBid | null;
     step: number; 
     productId?: number;
+    isOwner?: boolean;
 }
 
 const BiddingSection = ({ 
@@ -26,7 +27,8 @@ const BiddingSection = ({
     onPlaceBid, 
     currentAutoBid, 
     step, 
-    productId 
+    productId,
+    isOwner=false
 }: BiddingSectionProps) => {
     
     const [isFormOpen, setIsFormOpen] = useState(false);
@@ -74,8 +76,20 @@ const BiddingSection = ({
 
     return (
         <div className="space-y-8">
-        
-        {!isFormOpen ? (
+        {isOwner ? (
+            // OWNER VIEW: Static Info Card
+            <div className="bg-amber-50 p-8 rounded-xl border border-amber-200 flex flex-col items-center justify-center gap-4 text-center">
+                <div className="p-4 bg-white rounded-full shadow-sm border border-amber-100">
+                    <Ban className="w-10 h-10 text-amber-500" />
+                </div>
+                <div>
+                    <h3 className="text-xl font-bold text-gray-900">Bidding is Disabled for Seller</h3>
+                    <p className="text-gray-600 mt-2 max-w-lg mx-auto">
+                        To ensure a fair auction environment, sellers are not permitted to place bids or auto-bids on their own products.
+                    </p>
+                </div>
+            </div>
+        ) : (!isFormOpen ? (
             <div className="bg-blue-50/30 p-6 rounded-xl border border-blue-100 flex flex-col items-center justify-center gap-4 text-center transition-all">
                 
                 <div>
@@ -181,8 +195,7 @@ const BiddingSection = ({
                     </form>
                 </CardContent>
             </Card>
-        )}
-
+        ))}        
         {/* --- BID HISTORY TABLE (Unchanged) --- */}
         <div>
             <h3 className="text-xl font-bold mb-4">Bid History ({bidHistory.length})</h3>

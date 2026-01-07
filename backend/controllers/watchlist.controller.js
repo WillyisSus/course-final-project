@@ -18,17 +18,12 @@ const watchlistController = {
         }
     },
 
-    // GET /api/watchlists/:id
-    // Check if a specific product (by ID) is in the user's watchlist
-    // Useful for the frontend to toggle the "Heart" icon state
     getOne: async (req, res) => {
         try {
             const userId = req.user.user_id;
             const productId = req.params.id;
 
-            // We reuse the service logic or call a specific check function
-            // Here I'll verify via the list or a direct find (assuming you might add findOne to service)
-            // For now, let's assume we fetch all and find it (or you can add isWatched() to Service)
+       
             const items = await WatchlistService.findAllWatchlistItems(userId);
             const isWatched = items.some(item => item.product_id == productId);
 
@@ -69,12 +64,6 @@ const watchlistController = {
             }
             res.status(500).json({ message: error.message });
         }
-    },
-
-    // PUT /api/watchlists/:id
-    // Not applicable for watchlists (it's binary: watched or not)
-    putOne: async (req, res) => {
-        res.status(405).json({ message: "Update not supported for watchlist items. Please Delete and Re-add." });
     },
 
     // DELETE /api/watchlists/:id

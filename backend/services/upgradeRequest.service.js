@@ -16,7 +16,18 @@ export const UpgradeRequestService = {
       order: [['request_id', 'ASC']]
     });
   },
-
+  async findUpgradeRequestById(userId) {
+    return await models.upgrade_requests.findOne({
+      where: { user_id: userId },
+      include: [
+        {
+          model: models.users,
+          as: 'user', //
+          attributes: ['user_id', 'full_name', 'email', 'positive_rating', 'negative_rating']
+        }
+      ]
+    });
+  },
   // User Action: Create a request
   async createUpgradeRequest(userId, reason) {
     // Check if user already has a pending request

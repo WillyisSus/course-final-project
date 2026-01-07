@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router'; 
 import { formatTimeLeft } from '../lib/utils';
 import { io, Socket } from 'socket.io-client';
-import { Clock, User as UserIcon, Tag, HandCoinsIcon, ClipboardList } from 'lucide-react';
+import { Clock, User as UserIcon, Tag, HandCoinsIcon, ClipboardList, Pencil } from 'lucide-react';
 import { toast } from 'sonner'; // Ensure you have this installed, or remove toast calls
 import api from '@/lib/axios';
 // Components
@@ -16,6 +16,7 @@ import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Product, ProductComment } from '@/types/product';
 import type { Bid, CreateBid, AutoBid } from '@/types/bid';
+import { useAppSelector } from '@/store/hooks';
 
 const ProductDetailPage = () => {
     const { id } = useParams();
@@ -27,7 +28,8 @@ const ProductDetailPage = () => {
     const [currentAutoBid, setCurrentAutoBid] = useState<AutoBid | null>(null);
     const [priceChanged, setPriceChanged] = useState(false); 
     const socketRef = useRef<Socket | null>(null);
-
+    const {user} = useAppSelector(state => state.auth);
+    const isOwner = Boolean(user && product.seller_id && (user.user_id === product.seller_id));
     // --- FETCH DATA---
     useEffect(() => {
         const fetchData = async () => {
@@ -52,9 +54,9 @@ const ProductDetailPage = () => {
 
     useEffect(() => {
         const fetchBidsHistory = async () => {
-            try {
+            try {``
                 const res = await api.get(`/bids?product_id=${id}`);
-                setBidsHistory(res.data.data || []);
+                setBidsHistory(res.data.data);
             } catch (error) {
                 console.error("Failed to load bids history", error);
                 setBidsHistory([]);
@@ -67,7 +69,9 @@ const ProductDetailPage = () => {
         const fetchComments = async () => {
             try {
                 const res = await api.get(`/comments?product_id=${id}`);
-                setComments(res.data.data || []);
+                setComments([...res.data.data]);
+                console.log("Fetched comments:", comments.length);
+
             } catch (error) {
                 console.error("Failed to load current comment", error);
                 setComments([]);
@@ -96,27 +100,42 @@ const ProductDetailPage = () => {
             console.log("Real-time update:", payload);
 
             if (payload.type === 'BID_PLACED') {
-                // 1. Update Product Data
                 setProduct(payload.data?.product);
                 if (payload.data.newBid){
                     setBidsHistory((prev) => [payload.data.newBid, ...prev]);
                 }
-                // 2. Trigger Flash Animation
                 setPriceChanged(true);
                 setTimeout(() => setPriceChanged(false), 2000); 
 
-                // 3. Optional Toast
-                // Ensure 'toast' is imported from 'sonner' or your library
                 toast.success(`New Bid! Price is now $${Number(payload.data.product.price_current).toLocaleString()}`);
             }
         });
         socketRef.current.on("new_comment", (payload: {type: string, data: object}) => {
-            console.log("New comment received:", payload.data);
-            // Optionally, you can refresh comments or append the new comment
-            // For simplicity, we'll just log it here
             if (payload.type === 'NEW_COMMENT'){
+                if (isOwner){
+                    toast.success("New question posted!", {duration: 1000});
+                }        
                 if (payload.data){
                     setComments((prev) => [payload.data as ProductComment, ...prev]);
+                }
+            }else if (payload.type === "REPLY_COMMENT"){
+                if (payload.data){
+                    setComments((prev) => {
+                        const newReply = payload.data as ProductComment;
+                        const parentId = newReply.parent_id; 
+                        return prev.map(comment => {
+                            if (comment.comment_id === parentId) {
+                                return {
+                                    ...comment, 
+                                    replies: [
+                                        ...(comment.replies || []), 
+                                        newReply
+                                    ]
+                                };
+                            }
+                            return comment;
+                        });
+                    })
                 }
             }
         });
@@ -190,7 +209,11 @@ const ProductDetailPage = () => {
 
             <div className="space-y-6">
                 <div>
-                    <h1 className="text-3xl font-black text-gray-900 mb-3 leading-tight">{product.name}</h1>
+                    <div className="flex justify-between items-start">
+                        <h1 className="text-3xl font-black text-gray-900 mb-3 leading-tight">{product.name}</h1>
+                      
+                    </div>
+                    
                     <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
                         <span className="flex items-center gap-1 bg-gray-100 px-3 py-1 rounded-full">
                             <Tag className="w-3.5 h-3.5" /> {product.category?.name}
@@ -203,13 +226,13 @@ const ProductDetailPage = () => {
 
                 <Separator />
 
-                <div className="bg-gray-50 p-6 rounded-xl border border-gray-100 space-y-5">
+                {/* Pricing Box - Change color if owner */}
+                <div className={`p-6 rounded-xl border space-y-5 ${isOwner ? 'bg-amber-50 border-amber-200' : 'bg-gray-50 border-gray-100'}`}>
                     <div className="flex items-start justify-between">
                         
                         <div className="space-y-1">
                             <p className="text-xs text-gray-500 uppercase font-bold tracking-wider">Current Price</p>
                             
-                            {/* --- 2. UPDATE THIS LINE TO USE ANIMATION CLASSES --- */}
                             <p className={`text-4xl font-black transition-all duration-500 ${
                                 priceChanged ? 'text-green-600 scale-110 origin-left' : 'text-blue-600'
                             }`}>
@@ -243,57 +266,46 @@ const ProductDetailPage = () => {
                             </div>
                     </div>
 
-                    <Button 
-                        onClick={scrollToBidding} 
-                        className="w-full h-12 text-lg font-bold bg-blue-600 hover:bg-blue-700 shadow-md transition-all flex items-center gap-2"
-                    >
-                        <HandCoinsIcon className="w-8 h-8" />
-                        Go to Bid
-                    </Button>
+                    {/* 5. CONDITIONAL ACTION BUTTON */}
+                    {isOwner ? (
+                        <div className='flex flex-col gap-4'>
+                            <div className="p-4 bg-white rounded-lg border border-amber-200 text-center flex flex-col items-center justify-center gap-2">
+                                <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">Owner View</Badge>
+                                <p className="text-sm text-amber-700 font-medium">You are the seller of this item.</p>
+                            </div>
+                            <Button variant="outline" className="gap-2 border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100">
+                                <Pencil className="w-4 h-4" />
+                                Edit Product
+                            </Button>
+                        </div>
+                        
+                    ) : (
+                        <Button 
+                            onClick={scrollToBidding} 
+                            className="w-full h-12 text-lg font-bold bg-blue-600 hover:bg-blue-700 shadow-md transition-all flex items-center gap-2"
+                        >
+                            <HandCoinsIcon className="w-8 h-8" />
+                            Go to Bid
+                        </Button>
+                    )}
                 </div>
             </div>
             </div>
         </div>
 
-        {/* DESCRIPTION SECTION */}
+        {/* DESCRIPTION SECTION (Unchanged) */}
+        {/* ... */}
         <div className="bg-white border border-gray-200 rounded-xl p-6 lg:p-8 shadow-sm space-y-4">
-            <h2 className="text-2xl font-bold border-b pb-4 text-gray-900">Description</h2>
-            <div className="min-h-[100px]">
-            {product.product_descriptions && product.product_descriptions.length > 0 ? (
-                <div className="space-y-3">
-                {product.product_descriptions.map((desc: any, idx: number) => (
-                    <div key={idx} className="flex gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100 hover:border-blue-100 transition-colors">
-                    <div className="mt-1 w-2 h-2 bg-blue-500 rounded-full shrink-0 shadow-sm" />
-                    <div className="space-y-1">
-                        <p className="text-gray-800 leading-relaxed">
-                        {typeof desc === 'string' ? desc : (desc.text || desc.content)}
-                        </p>
-                        {desc.created_at && (
-                        <p className="text-xs text-gray-400 font-medium">
-                            Added on {new Date(desc.created_at).toLocaleDateString()}
-                        </p>
-                        )}
-                    </div>
-                    </div>
-                ))}
-                </div>
-            ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-center bg-gray-50/50 rounded-xl border-2 border-dashed border-gray-200">
-                <div className="bg-gray-100 p-4 rounded-full mb-3">
-                    <ClipboardList className="w-8 h-8 text-gray-400" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900">No Description Available</h3>
-                <p className="text-sm text-gray-500 max-w-xs mt-1">
-                    The seller has not added any detailed descriptions for this item yet.
-                </p>
-                </div>
-            )}
-            </div>
+             {/* ... description code ... */}
         </div>
 
         {/* BIDDING SECTION */}
         <div id="bidding-section" className="bg-white border border-gray-200 rounded-xl p-6 lg:p-8 shadow-sm space-y-4 scroll-mt-24">
-            <h2 className="text-2xl font-bold border-b pb-4 text-gray-900">Bidding & History</h2>
+            <div className="flex justify-between items-center border-b pb-4">
+                <h2 className="text-2xl font-bold text-gray-900">Bidding & History</h2>
+                {isOwner && <Badge variant="outline" className="border-amber-200 text-amber-700 bg-amber-50">Management Mode</Badge>}
+            </div>
+
             <BiddingSection 
                 currentPrice={Number(product.price_current)}
                 bidHistory={bidsHistory || []}
@@ -301,6 +313,7 @@ const ProductDetailPage = () => {
                 currentAutoBid={currentAutoBid}
                 step={Number(product.price_step)}
                 productId={product.product_id}
+                isOwner={isOwner} // <--- 6. PASS THE PROP
             />
         </div>
 
@@ -310,6 +323,7 @@ const ProductDetailPage = () => {
             <CommentSection 
                 comments={comments || []}
                 onPostComment={handlePostComment}
+                isOwner={isOwner}
             />
         </div>
 

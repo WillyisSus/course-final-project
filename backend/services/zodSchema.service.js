@@ -91,9 +91,6 @@ export const updateAutoBidSchema = z.object({
  */
 export const createFeedbackSchema = z.object({
   product_id: idSchema,
-  // from_user is implied by Auth
-  // to_user can be inferred by the backend (finding who the other party was), 
-  // or sent explicitly if you want to be safe.
   to_user_id: idSchema, 
   rating: z.coerce.number().int().min(1).max(5), // 1-5 stars
   comment: z.string().optional(),
@@ -144,4 +141,8 @@ export const createCommentSchema = z.object({
 export const createMessageSchema = z.object({
   receiver_id: idSchema,
   content: z.string().min(1, "Message content cannot be empty"), //
+});
+
+export const createWatchlistSchema = z.object({
+  product_id: idSchema,
 });

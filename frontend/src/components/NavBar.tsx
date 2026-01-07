@@ -154,8 +154,10 @@ const Navbar = () => {
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="cursor-pointer gap-2">
-                  <User className="w-4 h-4" /> Profile
+                <DropdownMenuItem asChild className="cursor-pointer gap-2">
+                  <Link to={"/profile"}>
+                    <User className="w-4 h-4" /> Profile
+                  </Link>
                 </DropdownMenuItem>
                 {user.role === 'SELLER' && (
                   <DropdownMenuItem className="cursor-pointer gap-2">
