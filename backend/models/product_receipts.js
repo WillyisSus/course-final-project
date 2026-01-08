@@ -53,6 +53,10 @@ export default class product_receipts extends Model {
         allowNull: true,
         defaultValue: "PENDING"
       },
+      paypal_order:{
+        type: DataTypes.STRING(255),
+        allowNull: true
+      },
       created_at: {
         type: DataTypes.DATE,
         allowNull: false,

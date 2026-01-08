@@ -13,7 +13,12 @@ const paymentController = {
             
             const productReceipt = await ProductReceiptService.getReceiptByProductId(product_id);
             if (!productReceipt) return res.status(404).json({ message: "Product receipt not found" });
-
+            if (productReceipt.buyer_id !== userId) {
+                return res.status(403).json({ message: "Unauthorized access to this receipt" });
+            }
+            if (productReceipt.paid_by_buyer) {
+                return res.status(400).json({ message: "This receipt has already been paid" });
+            }
             let amountVND = productReceipt.amount;
             // if (product.status === 'ACTIVE' && product.price_buy_now) {
             //     amountVND = product.price_buy_now;
@@ -44,7 +49,7 @@ const paymentController = {
 
             if (captureData.status === 'COMPLETED') {
                 const productReceipt = await ProductReceiptService.getReceiptByProductId(product_id);
-                await productReceipt.update({ paid_by_buyer: true });
+                await productReceipt.update({ paid_by_buyer: true, paypal_order: orderID});
                 res.json({ status: 'FINISHED' });
             }
         } catch (error) {

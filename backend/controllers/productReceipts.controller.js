@@ -1,16 +1,21 @@
-import { ProductService } from "../services/product.service";
-import { ProductReceiptService } from "../services/productReceipts.service";
+import { ProductService } from "../services/product.service.js";
+import { ProductReceiptService } from "../services/productReceipts.service.js";
 const productReceiptController = {
-    // GET /api/receipts
+    // GET /api/receipts?product_id=XXX
     getAll: async (req, res) => {
         try {
-            const userId = req.user.user_id; // From Auth Middleware
-            const receipts = await ProductReceiptService.getUserReceipts(userId);
-            
-            res.json({ 
-                message: "Receipts retrieved successfully", 
-                data: receipts 
-            });
+            const product_id = req.query.product_id;
+            if (product_id) {
+                const receipt = await ProductReceiptService.getReceiptByProductId(product_id);
+                if (!receipt) {
+                    return res.status(404).json({ message: "Receipt not found for the given product ID" });
+                }
+                return res.json({
+                    message: "Receipt details retrieved",
+                    data: receipt
+                });
+            }
+            res.status(400).json({ message: "product_id query parameter is required" });
         } catch (error) {
             console.error(error);
             res.status(500).json({ message: "Internal Server Error" });

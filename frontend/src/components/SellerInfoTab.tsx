@@ -2,12 +2,12 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import api from '@/lib/axios';
 import { formatTimeLeft } from '@/lib/utils';
-import { Package, CheckCircle, ExternalLink } from 'lucide-react';
+import { Package, CheckCircle, ExternalLink, MessageSquareText } from 'lucide-react'; // Added Icon
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Button } from './ui/button';
+import { Button } from '@/components/ui/button'; // Adjusted import path if needed
 import { useAppSelector } from '@/store/hooks';
 import type { Product } from '@/types/product';
 
@@ -16,11 +16,13 @@ const SellerInfoTab = () => {
     const [loading, setLoading] = useState(true);
     const { user } = useAppSelector((state) => state.auth);
     const sellerId = user?.user_id;
+
     useEffect(() => {
         const fetchSellerProducts = async () => {
             setLoading(true);
             try {
                 const res = await api.get(`/products?seller_id=${sellerId}`);
+                console.log("Seller products fetch response:", res.data);
                 setProducts(res.data.data || []);
             } catch (error) {
                 console.error("Failed to fetch seller products", error);
@@ -49,27 +51,47 @@ const SellerInfoTab = () => {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {data.length > 0 ? data.map(product => (
-                        <TableRow key={product.product_id}>
-                            <TableCell className="font-medium">{product.name}</TableCell>
-                            <TableCell className="font-bold text-primary">${Number(product.price_current).toLocaleString()}</TableCell>
-                            <TableCell>{product.bid_count}</TableCell>
-                            <TableCell className="text-muted-foreground">
-                                {product.status === 'ACTIVE' ? (
-                                    <span className="text-orange-600 font-medium">{formatTimeLeft(product.end_date)}</span>
-                                ) : (
-                                    <span>Winner: {product.winner?.full_name || "None"}</span>
-                                )}
-                            </TableCell>
-                            <TableCell className="text-right">
-                                <Button variant="ghost" size="sm" asChild className="h-8 text-blue-600 hover:text-blue-800">
-                                    <Link to={`/products/${product.product_id}`}>
-                                        View <ExternalLink className="ml-1 w-3 h-3" />
-                                    </Link>
-                                </Button>
-                            </TableCell>
-                        </TableRow>
-                    )) : (
+                    {data.length > 0 ? data.map(product => {
+                        // Check if this specific row needs the "Transaction" button
+                        const isSold = product.status === 'SOLD' || (product.status !== 'ACTIVE' && product.winner_id);
+                        
+                        return (
+                            <TableRow key={product.product_id}>
+                                <TableCell className="font-medium max-w-[200px] truncate" title={product.name}>
+                                    {product.name}
+                                </TableCell>
+                                <TableCell className="font-bold text-primary">
+                                    ₫{Number(product.price_current).toLocaleString()}
+                                </TableCell>
+                                <TableCell>{product.bid_count}</TableCell>
+                                <TableCell className="text-muted-foreground text-sm">
+                                    {product.status === 'ACTIVE' ? (
+                                        <span className="text-orange-600 font-medium">{formatTimeLeft(product.end_date)}</span>
+                                    ) : (
+                                        <div className="flex flex-col">
+                                            <span>Winner: {product.winner?.full_name || "None"}</span>
+                                            <span className="text-xs">{new Date(product.end_date).toLocaleDateString()}</span>
+                                        </div>
+                                    )}
+                                </TableCell>
+                                <TableCell className="text-right space-x-2">
+                                    {isSold && (
+                                        <Button variant="outline" size="sm" asChild className="h-8 text-green-700 border-green-200 hover:bg-green-50">
+                                            <Link to={`/checkout/${product.product_id}`}>
+                                                <MessageSquareText className="mr-1 w-3 h-3" /> Contact Buyer
+                                            </Link>
+                                        </Button>
+                                    )}
+
+                                    <Button variant="ghost" size="sm" asChild className="h-8 text-blue-600 hover:text-blue-800">
+                                        <Link to={`/products/${product.product_id}`}>
+                                            View <ExternalLink className="ml-1 w-3 h-3" />
+                                        </Link>
+                                    </Button>
+                                </TableCell>
+                            </TableRow>
+                        );
+                    }) : (
                         <TableRow>
                             <TableCell colSpan={5} className="h-24 text-center text-muted-foreground italic">{emptyMsg}</TableCell>
                         </TableRow>

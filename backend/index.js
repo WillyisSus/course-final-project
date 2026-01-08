@@ -22,6 +22,7 @@ import startWorker from './utils/worker.js';
 import watchlistRouter from './routes/watchlist.route.js';
 import upgradeRequestRouter from './routes/upgradeRequest.route.js';
 import paymentRouter from './routes/payment.route.js';
+import productReceiptRouter from './routes/productReceipts.route.js';
 const PORT = 3000;
 configDotenv();
 
@@ -59,7 +60,16 @@ io.on("connection", (socket) => {
     socket.leave(roomName);
     console.log(`User ${socket.id} left room: ${roomName}`);
   });
-
+  socket.on("join_transaction", (productId) => {
+    const roomName = `transaction_${productId}`;
+    socket.join(roomName);
+    console.log(`User ${socket.id} joined transaction room: ${roomName}`);
+  });
+    socket.on("leave_transaction", (productId) => {
+    const roomName = `transaction_${productId}`;
+    socket.leave(roomName);
+    console.log(`User ${socket.id} left transaction room: ${roomName}`);
+  });
   socket.on("disconnect", () => {
     console.log("User disconnected");
   });
@@ -90,7 +100,7 @@ app.use('/api/messages', messageRouter);
 app.use('/api/watchlists', watchlistRouter)
 app.use('/api/upgrade-requests', upgradeRequestRouter)
 app.use('/api/payment', paymentRouter);
-
+app.use('/api/receipts', productReceiptRouter)
 
 const retryConnection = async (retriesLeft, delay) => {
     try {

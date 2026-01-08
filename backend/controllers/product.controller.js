@@ -15,7 +15,7 @@ const productController = {
                 sortBy: req.query.sort || 'end_date', 
                 sortOrder: req.query.order || 'ASC', 
                 category: req.query.category || null, 
-                status: req.query.status || 'ACTIVE',
+                status: req.query.status,
                 sellerId: req.query.seller_id || null
             };
             const { count, rows } = await ProductService.findAllProducts({ 
@@ -40,7 +40,7 @@ const productController = {
             res.status(500).json({ message: error.message || "Internal Server Error" });
         }
     },
-
+    
     // GET /api/products/:id
     getOne: async (req, res) => {
         try {

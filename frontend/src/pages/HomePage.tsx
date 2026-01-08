@@ -23,9 +23,9 @@ const HomePage = () => {
       try {
         // Parallel fetching
         const [resEnding, resActive, resPrice] = await Promise.all([
-          axios.get('http://localhost:3000/api/products?sort=end_date&order=ASC&limit=5'),
-          axios.get('http://localhost:3000/api/products?sort=bid_count&order=DESC&limit=5'),
-          axios.get('http://localhost:3000/api/products?sort=price_current&order=DESC&limit=5')
+          axios.get('http://localhost:3000/api/products?sort=end_date&order=ASC&limit=5&status=ACTIVE'),
+          axios.get('http://localhost:3000/api/products?sort=bid_count&order=DESC&limit=5&status=ACTIVE'),
+          axios.get('http://localhost:3000/api/products?sort=price_current&order=DESC&limit=5&status=ACTIVE')
         ]);
 
         setData({

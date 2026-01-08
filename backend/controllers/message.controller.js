@@ -1,15 +1,16 @@
 import { MessageService } from '../services/messages.service.js';
 
 const messageController = {
-    // GET /api/messages/conversation/:userId
+    // GET /api/messages?user_id=XXX&product_id=YYY
     // Get chat history with a specific user (e.g., Seller ID)
     getConversation: async (req, res) => {
         try {
             const currentUserId = req.user.user_id;
-            const otherUserId = req.params.userId;
-
-            const conversation = await MessageService.getConversation(currentUserId, otherUserId);
-            
+            const {user_id, product_id} = req.query;
+            if (!user_id || !product_id) {
+                return res.status(400).json({ message: "user_id and product_id query parameters are required" });
+            }
+            const conversation = await MessageService.getConversation(currentUserId, user_id, product_id);
             res.json({ 
                 message: "Conversation retrieved", 
                 data: conversation 
@@ -24,14 +25,16 @@ const messageController = {
     postOne: async (req, res) => {
         try {
             const senderId = req.user.user_id;
-            const { receiver_id, content } = req.body;
+            const { receiver_id, product_id, content } = req.body;
 
-            if (!receiver_id || !content) {
+            if (!receiver_id || !content || !product_id) {
                 return res.status(400).json({ message: "Receiver ID and Content are required" });
             }
-
-            const newMessage = await MessageService.sendMessage(senderId, receiver_id, content);
-
+            const newMessage = await MessageService.sendMessage(senderId, receiver_id, product_id, content);
+            const io = req.app.get('io');
+            if (io) {
+                io.to(`transaction_${product_id}`).emit('new_transaction_message', newMessage);
+            }
             res.status(201).json({ 
                 message: "Message sent", 
                 data: newMessage 

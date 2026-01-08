@@ -2,11 +2,11 @@ import express from 'express';
 import productReceiptController from '../controllers/productReceipts.controller.js';
 import { validate } from '../utils/validator.js';
 import {createProductReceiptSchema, updateProductReceiptSchema, receiptIdSchema} from '../services/zodSchema.service.js';
-import { checkAuth } from '../controllers/auth.controller.js';
+import authController from '../controllers/auth.controller.js';
 
 const productReceiptRouter = express.Router();
 productReceiptRouter.use((req, res, next) => {
-  checkAuth(req, res, next);
+  authController.checkAuth(req, res, next);
 });
 
 productReceiptRouter.get('/', productReceiptController.getAll);

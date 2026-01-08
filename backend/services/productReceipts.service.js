@@ -57,6 +57,22 @@ export const ProductReceiptService = {
     if (!productId) throw new Error("Product ID is required");
     return await models.product_receipts.findOne({
       where: { product_id: productId },
+      include: [
+        {
+          model: models.products,
+          as: 'product',
+          attributes: ['product_id', 'name', 'price_current', 'status'],
+          include: [
+            {
+              model: models.product_images,
+              as: 'product_images',
+              where: { is_primary: true },
+              attributes: ['image_url'],
+              required: false
+            }
+          ]
+        }
+      ]
     });
   },
   // 4. Update Receipt Status (Smart Update)

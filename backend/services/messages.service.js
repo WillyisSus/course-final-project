@@ -4,13 +4,14 @@ import { Op } from 'sequelize';
 export const MessageService = {
 
   // Get chat history between two specific users
-  async getConversation(currentUserId, otherUserId) {
+  async getConversation(currentUserId, otherUserId, productId) {
     return await models.messages.findAll({
       where: {
         [Op.or]: [
           { sender_id: currentUserId, receiver_id: otherUserId },
           { sender_id: otherUserId, receiver_id: currentUserId }
-        ]
+        ],
+        product_id: productId
       },
       order: [['created_at', 'ASC']], // Oldest to newest (like Messenger/WhatsApp)
       include: [
@@ -27,7 +28,7 @@ export const MessageService = {
   // This is a bit complex in SQL/Sequelize, often simpler to fetch recent messages and filter in JS
   // or use a `DISTINCT` query. For simplicity, we'll skip the "Inbox List" for now and focus on "Chat Detail".
 
-  async sendMessage(senderId, receiverId, content) {
+  async sendMessage(senderId, receiverId, productId, content) {
     if (senderId == receiverId) {
       throw new Error('You cannot message yourself');
     }
@@ -38,6 +39,7 @@ export const MessageService = {
     return await models.messages.create({
       sender_id: senderId,
       receiver_id: receiverId,
+      product_id: productId,
       content,
       is_read: false
     });
@@ -60,7 +62,7 @@ export const MessageService = {
     return await models.messages.count({
       where: {
         receiver_id: userId,
-        is_read: false
+        is_read: false,
       }
     });
   }

@@ -55,6 +55,7 @@ const CheckoutButton = ({ amount, product_id, seller_id }: CheckoutButtonProps) 
 
                             if (response.data.status === 'FINISHED') {
                                 toast.success("Payment Successful! Receipt emailed.");
+                                // Redirect user to their profile or the product page
                                 navigate('/profile/autobids'); 
                             }
                             console.log("Capture Response:", response.data);
