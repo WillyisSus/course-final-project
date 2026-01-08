@@ -1,18 +1,18 @@
-import { Link } from 'react-router';
-import { type Product } from '../types/product';
-import { Clock, Calendar } from 'lucide-react';
+import { Link } from "react-router";
+import { type Product } from "../types/product";
+import { Clock, Calendar } from "lucide-react";
 
 // Shadcn Components
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
 
 // --- Helper Logic ---
 const maskName = (fullName?: string) => {
   if (!fullName) return "No Bids";
-  const parts = fullName.split(' ');
-  return parts[0] + ' ***'; 
+  const parts = fullName.split(" ");
+  return parts[0] + " ***";
 };
 
 const getTimeLeft = (endDate: string) => {
@@ -24,19 +24,19 @@ const getTimeLeft = (endDate: string) => {
 
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
   const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  
+
   // Urgent: Less than 3 days
   if (days <= 3) {
-    return { 
-      text: days === 0 ? `${hours}h left` : `${days}d ${hours}h left`, 
-      color: "text-orange-600 font-bold" 
+    return {
+      text: days === 0 ? `${hours}h left` : `${days}d ${hours}h left`,
+      color: "text-orange-600 font-bold",
     };
   }
-  
+
   // Standard
-  return { 
-    text: new Date(endDate).toLocaleDateString(), 
-    color: "text-gray-500" 
+  return {
+    text: new Date(endDate).toLocaleDateString(),
+    color: "text-gray-500",
   };
 };
 
@@ -50,12 +50,11 @@ export const ProductCard = ({ product }: ProductCardProps) => {
   return (
     <Link to={`/products/${product.product_id}`} className="block h-full">
       <Card className="h-full overflow-hidden hover:shadow-lg transition-all duration-300 group flex flex-col border-slate-200">
-        
         {/* 1. Image Section */}
         <div className="relative h-48 bg-slate-100 overflow-hidden">
           {product.product_images?.[0] ? (
-            <img 
-              src={`${product.product_images[0].image_url}`} 
+            <img
+              src={`${product.product_images[0].image_url}`}
               alt={product.name}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             />
@@ -64,10 +63,13 @@ export const ProductCard = ({ product }: ProductCardProps) => {
               No Image
             </div>
           )}
-          
+
           {/* Badge: Total Bids */}
           <div className="absolute top-2 right-2">
-            <Badge variant="secondary" className="backdrop-blur-md bg-white/90 shadow-sm text-slate-700">
+            <Badge
+              variant="secondary"
+              className="backdrop-blur-md bg-white/90 shadow-sm text-slate-700"
+            >
               {product.bid_count || 0} Bids
             </Badge>
           </div>
@@ -78,11 +80,16 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           {/* Posted Date */}
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Calendar className="w-3 h-3" />
-            <span>Posted {new Date(product.start_date).toLocaleDateString()}</span>
+            <span>
+              Posted {new Date(product.start_date).toLocaleDateString()}
+            </span>
           </div>
 
           {/* Name */}
-          <h3 className="font-semibold text-base leading-tight text-slate-900 line-clamp-2 group-hover:text-blue-600 transition-colors" title={product.name}>
+          <h3
+            className="font-semibold text-base leading-tight text-slate-900 line-clamp-2 group-hover:text-blue-600 transition-colors"
+            title={product.name}
+          >
             {product.name}
           </h3>
 
@@ -91,16 +98,20 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           {/* Price Grid */}
           <div className="grid grid-cols-2 gap-2 items-end">
             <div>
-              <p className="text-xs text-muted-foreground mb-0.5">Current Bid</p>
+              <p className="text-xs text-muted-foreground mb-0.5">
+                Current Bid
+              </p>
               <p className="text-lg font-bold text-blue-700">
-                {product.price_current? "₫"+(Number(product.price_current)).toLocaleString() : "No bids"}
+                {product.price_current
+                  ? "₫" + Number(product.price_current).toLocaleString()
+                  : "No bids"}
               </p>
             </div>
             {product.price_buy_now && (
               <div className="text-right">
                 <p className="text-xs text-muted-foreground mb-0.5">Buy Now</p>
                 <p className="text-sm font-medium text-slate-600">
-                 ₫{(Number(product.price_buy_now)).toLocaleString()}
+                  ₫{Number(product.price_buy_now).toLocaleString()}
                 </p>
               </div>
             )}
@@ -122,7 +133,9 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           </div>
 
           {/* Time Left */}
-          <div className={`flex items-center gap-1.5 text-xs ${timeLeft.color}`}>
+          <div
+            className={`flex items-center gap-1.5 text-xs ${timeLeft.color}`}
+          >
             <Clock className="w-3.5 h-3.5" />
             <span>{timeLeft.text}</span>
           </div>

@@ -9,8 +9,21 @@ import { verifyUserSuccess } from "../store/slices/authSlice";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Loader2, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -25,7 +38,7 @@ const VerifyOtpPage = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
-  
+
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
 
@@ -40,19 +53,19 @@ const VerifyOtpPage = () => {
     try {
       // POST to backend
       await api.post("/auth/verify-otp", { otp: data.otp });
-      
+
       // Update Redux state immediately
       dispatch(verifyUserSuccess());
-      
+
       // Success Feedback
-      // toast.success("Account Verified Successfully!"); 
-      
+      // toast.success("Account Verified Successfully!");
+
       // Redirect to Home
       navigate("/");
     } catch (error: any) {
       console.error("Verification failed", error);
-      form.setError("root", { 
-        message: error.response?.data?.message || "Invalid or Expired OTP Code" 
+      form.setError("root", {
+        message: error.response?.data?.message || "Invalid or Expired OTP Code",
       });
     } finally {
       setLoading(false);
@@ -85,7 +98,7 @@ const VerifyOtpPage = () => {
             Verify Your Account
           </CardTitle>
           <CardDescription>
-            We have sent a 6-digit verification code to 
+            We have sent a 6-digit verification code to
             <br />
             <span className="font-semibold text-gray-900">{user?.email}</span>
           </CardDescription>
@@ -94,7 +107,6 @@ const VerifyOtpPage = () => {
         <CardContent className="px-10 pb-10">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              
               <FormField
                 control={form.control}
                 name="otp"
@@ -102,11 +114,11 @@ const VerifyOtpPage = () => {
                   <FormItem>
                     <FormLabel className="sr-only">OTP Code</FormLabel>
                     <FormControl>
-                      <Input 
-                        placeholder="123456" 
-                        className="text-center text-3xl tracking-[0.5em] h-16 font-bold border-2 focus-visible:ring-blue-500" 
+                      <Input
+                        placeholder="123456"
+                        className="text-center text-3xl tracking-[0.5em] h-16 font-bold border-2 focus-visible:ring-blue-500"
                         maxLength={6}
-                        {...field} 
+                        {...field}
                       />
                     </FormControl>
                     <FormMessage />
@@ -121,8 +133,8 @@ const VerifyOtpPage = () => {
                 </div>
               )}
 
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 className="w-full h-12 text-lg bg-blue-600 hover:bg-blue-700 font-bold transition-all"
                 disabled={loading}
               >
@@ -137,8 +149,8 @@ const VerifyOtpPage = () => {
 
               <div className="text-sm text-gray-500 flex flex-col items-center gap-2 pt-2">
                 <p>Didn't receive the code?</p>
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={handleResend}
                   disabled={resending}
                   className="text-blue-600 font-semibold hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
@@ -146,7 +158,6 @@ const VerifyOtpPage = () => {
                   {resending ? "Sending..." : "Click to Resend OTP"}
                 </button>
               </div>
-
             </form>
           </Form>
         </CardContent>

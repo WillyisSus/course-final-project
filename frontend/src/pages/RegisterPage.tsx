@@ -10,12 +10,19 @@ import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 
 const RegisterPage = () => {
   const navigate = useNavigate();
   const recaptchaRef = useRef<ReCAPTCHA>(null);
-  
+
   // State
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -23,14 +30,18 @@ const RegisterPage = () => {
 
   const form = useForm<RegisterInput>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { 
-      email: "", password: "", confirmPassword: "", 
-      full_name: "", address: "", dob: ""
+    defaultValues: {
+      email: "",
+      password: "",
+      confirmPassword: "",
+      full_name: "",
+      address: "",
+      dob: "",
     },
   });
 
   const onCaptchaChange = (token: string | null) => {
-    console.log(token)
+    console.log(token);
     setCaptchaToken(token);
   };
 
@@ -45,13 +56,13 @@ const RegisterPage = () => {
       const { confirmPassword, ...payload } = data;
       const registerBody = {
         ...payload,
-        recaptcha_token: captchaToken
-      }
-      console.log(registerBody)
+        recaptcha_token: captchaToken,
+      };
+      console.log(registerBody);
       console.log();
       // 2. Send token to backend along with form data
-      await api.post("/auth/register", registerBody)
-      
+      await api.post("/auth/register", registerBody);
+
       navigate("/login");
     } catch (error) {
       console.error("Registration failed", error);
@@ -63,18 +74,18 @@ const RegisterPage = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <Card className="w-[60%] min-w-[400px] shadow-xl border-gray-200">
-        
         <CardHeader className="text-center pb-6">
           <CardTitle className="text-4xl font-bold text-blue-600 mb-2">
             BigBiddie
           </CardTitle>
-          <p className="text-base text-gray-500">Create an account to start bidding!</p>
+          <p className="text-base text-gray-500">
+            Create an account to start bidding!
+          </p>
         </CardHeader>
 
         <CardContent className="px-10 pb-10">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              
               {/* --- (Existing Input Fields: Name, Email, Address, DOB...) --- */}
               <FormField
                 control={form.control}
@@ -82,7 +93,13 @@ const RegisterPage = () => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-base">Full Name</FormLabel>
-                    <FormControl><Input placeholder="John Doe" className="h-12 text-base" {...field} /></FormControl>
+                    <FormControl>
+                      <Input
+                        placeholder="John Doe"
+                        className="h-12 text-base"
+                        {...field}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -93,12 +110,18 @@ const RegisterPage = () => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-base">Email</FormLabel>
-                    <FormControl><Input placeholder="john@example.com" className="h-12 text-base" {...field} /></FormControl>
+                    <FormControl>
+                      <Input
+                        placeholder="john@example.com"
+                        className="h-12 text-base"
+                        {...field}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
                   control={form.control}
@@ -106,18 +129,30 @@ const RegisterPage = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-base">Date of Birth</FormLabel>
-                      <FormControl><Input type="date" className="h-12 text-base" {...field} /></FormControl>
+                      <FormControl>
+                        <Input
+                          type="date"
+                          className="h-12 text-base"
+                          {...field}
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                 <FormField
+                <FormField
                   control={form.control}
                   name="address"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-base">Address</FormLabel>
-                      <FormControl><Input placeholder="123 Main St" className="h-12 text-base" {...field} /></FormControl>
+                      <FormControl>
+                        <Input
+                          placeholder="123 Main St"
+                          className="h-12 text-base"
+                          {...field}
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -134,9 +169,23 @@ const RegisterPage = () => {
                       <FormLabel className="text-base">Password</FormLabel>
                       <FormControl>
                         <div className="relative">
-                          <Input type={showPassword ? "text" : "password"} className="h-12 text-base pr-10" {...field} />
-                          <Button type="button" variant="ghost" size="sm" className="absolute right-0 top-0 h-full px-3 hover:bg-transparent" onClick={() => setShowPassword(!showPassword)}>
-                            {showPassword ? <EyeOff className="h-4 w-4 text-gray-400" /> : <Eye className="h-4 w-4 text-gray-400" />}
+                          <Input
+                            type={showPassword ? "text" : "password"}
+                            className="h-12 text-base pr-10"
+                            {...field}
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
+                            {showPassword ? (
+                              <EyeOff className="h-4 w-4 text-gray-400" />
+                            ) : (
+                              <Eye className="h-4 w-4 text-gray-400" />
+                            )}
                           </Button>
                         </div>
                       </FormControl>
@@ -149,12 +198,30 @@ const RegisterPage = () => {
                   name="confirmPassword"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-base">Confirm Password</FormLabel>
+                      <FormLabel className="text-base">
+                        Confirm Password
+                      </FormLabel>
                       <FormControl>
-                         <div className="relative">
-                          <Input type={showConfirmPassword ? "text" : "password"} className="h-12 text-base pr-10" {...field} />
-                          <Button type="button" variant="ghost" size="sm" className="absolute right-0 top-0 h-full px-3 hover:bg-transparent" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
-                            {showConfirmPassword ? <EyeOff className="h-4 w-4 text-gray-400" /> : <Eye className="h-4 w-4 text-gray-400" />}
+                        <div className="relative">
+                          <Input
+                            type={showConfirmPassword ? "text" : "password"}
+                            className="h-12 text-base pr-10"
+                            {...field}
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                            onClick={() =>
+                              setShowConfirmPassword(!showConfirmPassword)
+                            }
+                          >
+                            {showConfirmPassword ? (
+                              <EyeOff className="h-4 w-4 text-gray-400" />
+                            ) : (
+                              <Eye className="h-4 w-4 text-gray-400" />
+                            )}
                           </Button>
                         </div>
                       </FormControl>
@@ -174,22 +241,24 @@ const RegisterPage = () => {
               </div>
 
               <div className="pt-2">
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   disabled={!captchaToken} // Optional: Disable button until verified
                   className="w-full h-12 text-lg bg-blue-600 hover:bg-blue-700 font-bold disabled:opacity-50"
                 >
                   Create Account
                 </Button>
-                
+
                 <div className="mt-4 text-center text-sm text-gray-500">
                   Already have an account?{" "}
-                  <Link to="/login" className="text-blue-600 font-semibold hover:underline">
+                  <Link
+                    to="/login"
+                    className="text-blue-600 font-semibold hover:underline"
+                  >
                     Login here
                   </Link>
                 </div>
               </div>
-
             </form>
           </Form>
         </CardContent>

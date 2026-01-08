@@ -11,7 +11,14 @@ import { Eye, EyeOff } from "lucide-react"; // Import Icons
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 
 import { toast } from "sonner";
 const LoginPage = () => {
@@ -28,10 +35,12 @@ const LoginPage = () => {
   const onSubmit = async (data: LoginInput) => {
     try {
       const res = await api.post("/auth/login", data);
-      dispatch(setCredentials({
-        user: res.data.user,
-        accessToken: res.data.accessToken,
-      }));
+      dispatch(
+        setCredentials({
+          user: res.data.user,
+          accessToken: res.data.accessToken,
+        })
+      );
       if (res.data.user.is_verified === false) {
         navigate("/verify-otp"); // Redirect to OTP page
       } else {
@@ -39,7 +48,9 @@ const LoginPage = () => {
         navigate("/"); // Redirect to Home
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Login failed. Please try again.");
+      toast.error(
+        error.response?.data?.message || "Login failed. Please try again."
+      );
       console.error("Login failed", error);
     }
   };
@@ -51,13 +62,14 @@ const LoginPage = () => {
           <CardTitle className="text-4xl font-bold text-blue-600 mb-2">
             BigBiddie
           </CardTitle>
-          <p className="text-base text-gray-500">Welcome back! Please login to your account.</p>
+          <p className="text-base text-gray-500">
+            Welcome back! Please login to your account.
+          </p>
         </CardHeader>
 
         <CardContent className="px-10 pb-10">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              
               <FormField
                 control={form.control}
                 name="email"
@@ -65,7 +77,11 @@ const LoginPage = () => {
                   <FormItem>
                     <FormLabel className="text-base">Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="john@example.com" className="h-12 text-base" {...field} />
+                      <Input
+                        placeholder="john@example.com"
+                        className="h-12 text-base"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -79,18 +95,21 @@ const LoginPage = () => {
                   <FormItem>
                     <div className="flex items-center justify-between">
                       <FormLabel className="text-base">Password</FormLabel>
-                      <Link to="/forgot-password" className="text-sm text-blue-600 hover:underline">
+                      <Link
+                        to="/forgot-password"
+                        className="text-sm text-blue-600 hover:underline"
+                      >
                         Forgot password?
                       </Link>
                     </div>
                     <FormControl>
                       <div className="relative">
-                        <Input 
+                        <Input
                           // Dynamic Type
-                          type={showPassword ? "text" : "password"} 
-                          placeholder="••••••" 
+                          type={showPassword ? "text" : "password"}
+                          placeholder="••••••"
                           className="h-12 text-base pr-10" // Add padding right so text doesn't hit the icon
-                          {...field} 
+                          {...field}
                         />
                         <Button
                           type="button"
@@ -113,10 +132,13 @@ const LoginPage = () => {
               />
 
               <div className="pt-4 space-y-4">
-                <Button type="submit" className="w-full h-12 text-lg bg-blue-600 hover:bg-blue-700 font-bold">
+                <Button
+                  type="submit"
+                  className="w-full h-12 text-lg bg-blue-600 hover:bg-blue-700 font-bold"
+                >
                   Sign In
                 </Button>
-                
+
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center">
                     <span className="w-full border-t border-gray-200" />
@@ -126,16 +148,15 @@ const LoginPage = () => {
                   </div>
                 </div>
 
-                <Button 
-                  variant="outline" 
-                  type="button" 
+                <Button
+                  variant="outline"
+                  type="button"
                   className="w-full h-12 text-base"
                   onClick={() => navigate("/register")}
                 >
                   Create New Account
                 </Button>
               </div>
-
             </form>
           </Form>
         </CardContent>
