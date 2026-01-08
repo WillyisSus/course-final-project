@@ -232,7 +232,7 @@ const BiddingSection = ({
                         {new Date(bid.time).toLocaleString()}
                         </TableCell>
                         <TableCell className="text-right font-bold text-gray-900">
-                        ₫{(Number(bid.amount)*1000).toLocaleString()}
+                        ₫{(Number(bid.amount)).toLocaleString()}
                         </TableCell>
                     </TableRow>
                     ))

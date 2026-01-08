@@ -149,7 +149,7 @@ const ProductCardHorizontal = ({ product }: ProductCardHorizontalProps) => {
              <div>
                <p className="text-xs text-muted-foreground uppercase mb-1">Current Bid</p>
                <p className="text-2xl font-black text-blue-700">
-                 {product.price_current? "₫"+(Number(product.price_current)*1000).toLocaleString() : "No bids yet"}
+                 {product.price_current? "₫"+(Number(product.price_current)).toLocaleString() : "No bids yet"}
                </p>
              </div>
              

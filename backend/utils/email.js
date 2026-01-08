@@ -67,5 +67,19 @@ export const emailTemplates = {
         <p>Please proceed to checkout to claim your item.</p>
       </div>
     `
+  }),
+
+  // D. Payment Confirmation
+  paymentConfirmation: (buyerName, productName, amount, receiptId) => ({
+    subject: `Payment Received for ${productName}`,
+    html: `
+      <div style="font-family: sans-serif; padding: 20px;">
+        <h2>✅ Payment Confirmed</h2>
+        <p>Dear ${buyerName},</p>
+        <p>Thank you for your payment! We have successfully received your payment of <b>$${amount}</b> for <b>${productName}</b>.</p>
+        <p><b>Receipt ID:</b> ${receiptId}</p>
+        <p>Your item will be processed shortly. You can track the status and contact with the seller in your account dashboard.</p>
+      </div>
+    `
   })
 };

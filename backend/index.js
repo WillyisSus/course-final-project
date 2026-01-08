@@ -21,7 +21,7 @@ import messageRouter from './routes/messages.route.js';
 import startWorker from './utils/worker.js';
 import watchlistRouter from './routes/watchlist.route.js';
 import upgradeRequestRouter from './routes/upgradeRequest.route.js';
-
+import paymentRouter from './routes/payment.route.js';
 const PORT = 3000;
 configDotenv();
 
@@ -89,6 +89,9 @@ app.use('/api/comments', productCommentsRouter);
 app.use('/api/messages', messageRouter);
 app.use('/api/watchlists', watchlistRouter)
 app.use('/api/upgrade-requests', upgradeRequestRouter)
+app.use('/api/payment', paymentRouter);
+
+
 const retryConnection = async (retriesLeft, delay) => {
     try {
         await sequelize.authenticate();

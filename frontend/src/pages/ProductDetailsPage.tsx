@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useParams, Link } from 'react-router'; 
+import { useParams, Link, useNavigate } from 'react-router'; 
 import { formatTimeLeft } from '../lib/utils';
 import { io, Socket } from 'socket.io-client';
 import { Clock, User as UserIcon, Tag, HandCoinsIcon, Pencil, TextQuoteIcon } from 'lucide-react';
@@ -25,7 +25,6 @@ import {
 import type { Product, ProductComment } from '@/types/product';
 import type { Bid, CreateBid, AutoBid } from '@/types/bid';
 import { useAppSelector } from '@/store/hooks';
-
 const ProductDetailPage = () => {
     const { id } = useParams();
     const [product, setProduct] = useState<Product>(new Object() as Product);
@@ -41,6 +40,7 @@ const ProductDetailPage = () => {
     const isOwner = Boolean(user && product.seller_id && (user.user_id === product.seller_id));
     const isExpired = product.status === 'SOLD' || product.status === 'EXPIRED' || new Date(product.end_date) < new Date();
     const isWinner = Boolean(user && product.winner_id === user.user_id);
+    const navigate = useNavigate();
     // --- FETCH DATA---
     useEffect(() => {
         const fetchData = async () => {
@@ -168,13 +168,13 @@ const ProductDetailPage = () => {
     const handlePlaceBid = async (amount: number) => {
         try {
             if (currentAutoBid){
-                const payload: CreateBid = { max_price: amount };
+                const payload: CreateBid = { max_price: amount*1000 };
                 await api.put(`/auto-bids/${currentAutoBid.auto_bid_id}`, payload);
                 toast.success("Bid updated successfully!");
             } else {
                 const payload: CreateBid = {
                     product_id: Number(id),
-                    max_price: amount,
+                    max_price: amount*1000,
                 };
                 await api.post('/auto-bids', payload);
                 toast.success("Bid placed successfully!");
@@ -204,6 +204,9 @@ const ProductDetailPage = () => {
         // TODO: Implement buy now logic here
         // Close modal after implementation
         setIsBuyNowModalOpen(false);
+    }
+    const handleContactSeller = () => {
+        navigate('/checkout/' + product.product_id);
     }
     const scrollToBidding = () => {
         const section = document.getElementById('bidding-section');
@@ -250,7 +253,7 @@ const ProductDetailPage = () => {
                                 <p className={`text-4xl font-black transition-all duration-500 ${
                                     priceChanged ? 'text-green-600 scale-110 origin-left' : 'text-blue-600'
                                 }`}>
-                                    {product.price_current ? `₫${(Number(product.price_current)*1000).toLocaleString()}` : 'No bids yet'}
+                                    {product.price_current ? `₫${(Number(product.price_current)).toLocaleString()}` : 'No bids yet'}
                                 </p>
                             </div>
                             <div className="text-right space-y-2">
@@ -269,16 +272,16 @@ const ProductDetailPage = () => {
                                 {product.price_buy_now && (
                                     <div className='w-full flex items-center justify-between'>
                                         <span className="text-sm font-medium text-gray-600">Buy Now Price</span>
-                                        <span className="text-xl font-bold text-gray-900">₫{(Number(product.price_buy_now)*1000).toLocaleString()}</span>
+                                        <span className="text-xl font-bold text-gray-900">₫{(Number(product.price_buy_now)).toLocaleString()}</span>
                                     </div>
                                 )}
                                 <div className='w-full flex items-center justify-between'>
                                     <span className="text-sm font-medium text-gray-600">Start</span>
-                                    <span className="text-xl font-bold text-gray-900">₫{(Number(product.price_start)*1000).toLocaleString()}</span>
+                                    <span className="text-xl font-bold text-gray-900">₫{(Number(product.price_start)).toLocaleString()}</span>
                                 </div>
                                 <div className='w-full flex items-center justify-between'>
                                     <span className="text-sm font-medium text-gray-600">Step</span>
-                                    <span className="text-xl font-bold text-gray-900">₫{(Number(product.price_step)*1000).toLocaleString()}</span>
+                                    <span className="text-xl font-bold text-gray-900">₫{(Number(product.price_step)).toLocaleString()}</span>
                                 </div>
                                 <div className='w-full flex items-center justify-between'>
                                     <span className="text-sm font-medium text-gray-600">Highest Bidder</span>
@@ -308,7 +311,7 @@ const ProductDetailPage = () => {
                                     <p className="text-sm text-green-700">You won this auction!</p>
                                 </div>
                                 <Button 
-                                    onClick={() => setIsBuyNowModalOpen(true)} // Or navigate to specific Checkout page
+                                    onClick={handleContactSeller} // Or navigate to specific Checkout page
                                     className="w-full h-12 text-lg font-bold bg-green-600 hover:bg-green-700 shadow-md flex items-center gap-2"
                                 >
                                     <HandCoinsIcon className="w-6 h-6" />
@@ -420,7 +423,7 @@ const ProductDetailPage = () => {
                 <DialogHeader>
                     <DialogTitle>Confirm Purchase</DialogTitle>
                     <DialogDescription>
-                        Are you sure you want to buy this item at ₫{product.price_buy_now ? (Number(product.price_buy_now)*1000).toLocaleString() : '0'}? This action can not be undone. You will be guided to checkout page after confirming.
+                        Are you sure you want to buy this item at ₫{product.price_buy_now ? (Number(product.price_buy_now)).toLocaleString() : '0'}? This action can not be undone. You will be guided to checkout page after confirming.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
@@ -431,7 +434,7 @@ const ProductDetailPage = () => {
                         </div>
                         <div className="flex justify-between">
                             <span className="text-gray-600">Price:</span>
-                            <span className="font-semibold">₫{product.price_buy_now ? (Number(product.price_buy_now)*1000).toLocaleString() : '0'}</span>
+                            <span className="font-semibold">₫{product.price_buy_now ? (Number(product.price_buy_now)).toLocaleString() : '0'}</span>
                         </div>
                     </div>
                 </div>

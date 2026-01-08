@@ -260,8 +260,7 @@ const UploadProductPage = () => {
                                                         {...field} 
                                                         onChange={(e) => {
                                                             const value = e.target.value;
-                                                    
-                                                            field.onChange(value === "" ? undefined : Number(value));
+                                                            field.onChange(value === "" ? undefined : Number(value)*1000);
                                                         }}
                                                         value={String(field.value ?? "")}/>
                                                 </div>
@@ -286,7 +285,7 @@ const UploadProductPage = () => {
                                                         onChange={(e) => {
                                                             const value = e.target.value;
                                                     
-                                                            field.onChange(value === "" ? undefined : Number(value));
+                                                            field.onChange(value === "" ? undefined : Number(value)*1000);
                                                         }}
                                                         value={String(field.value ?? "")}/>
                                                 </div>

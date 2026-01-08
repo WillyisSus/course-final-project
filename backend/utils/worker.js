@@ -59,7 +59,7 @@ const checkExpiredAuctions = async () => {
             if (product.winner) {
                 console.log(`Closing Product #${product.product_id}. Winner: ${product.winner.email}`);
 
-                await product.update({ status: 'SOLD' }, { transaction });
+                await product.update({ status: 'EXPIRED' }, { transaction });
 
                 await models.product_receipts.create({
                     product_id: product.product_id,

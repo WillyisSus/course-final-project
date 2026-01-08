@@ -16,6 +16,7 @@ import UserProfileTab from './components/UserProfileTab'
 import SellerInfoTab from './components/SellerInfoTab'
 import AutoBidHistoryTab from './components/AutoBidHistoryTab'
 import ForbiddenPage from './pages/ForbiddenPage'
+import CheckoutPage from './pages/CheckoutPage'
 const router = createBrowserRouter([
   {
     path:"",
@@ -69,6 +70,9 @@ const router = createBrowserRouter([
   }, {
     path: "forbidden",
     Component: ForbiddenPage
+  }, {
+    path: "checkout/:productId",
+    Component: CheckoutPage
   }
 
 ])

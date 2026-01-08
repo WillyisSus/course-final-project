@@ -75,7 +75,7 @@ const HomePage = () => {
 
 // --- Helper: Skeleton Component for Loading State ---
 const CardSkeleton = () => (
-  <div className="flex flex-col space-y-3">
+  <div className="flex flex-col space-y-3 w-full">
     <Skeleton className="h-48 w-full rounded-xl" />
     <div className="space-y-2 p-2">
       <Skeleton className="h-4 w-3/4" />
