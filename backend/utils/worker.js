@@ -12,15 +12,12 @@ const checkExpiredAuctions = async () => {
     try {
         const now = new Date();
 
-        // --- STEP 1: FIND AND LOCK THE PRODUCTS (No Includes) ---
-        // We only fetch the product_id to lock the rows. 
-        // We avoid 'include' here to prevent the "nullable side of outer join" error.
         const lockedProducts = await models.products.findAll({
             where: {
                 status: 'ACTIVE',
                 end_date: { [Op.lt]: now }
             },
-            attributes: ['product_id'], // We only need the ID for now
+            attributes: ['product_id'], 
             transaction,
             lock: transaction.LOCK.UPDATE 
         });
@@ -33,9 +30,6 @@ const checkExpiredAuctions = async () => {
         const lockedIds = lockedProducts.map(p => p.product_id);
         console.log(`Found and locked ${lockedIds.length} expired auctions.`);
 
-        // --- STEP 2: FETCH FULL DETAILS ---
-        // Now that rows are locked, we fetch the relations needed for emails.
-        // We do NOT use 'lock' here, because the transaction already holds the locks from Step 1.
         const productsToProcess = await models.products.findAll({
             where: {
                 product_id: lockedIds
@@ -51,7 +45,7 @@ const checkExpiredAuctions = async () => {
                     as: 'bids',
                     include: [{ 
                         model: models.users, 
-                        as: 'bidder', // Ensure this alias matches your Bid model association (e.g., 'user' or 'bidder')
+                        as: 'bidder', 
                         attributes: ['user_id', 'email', 'full_name'] 
                     }]
                 }
@@ -59,7 +53,6 @@ const checkExpiredAuctions = async () => {
             transaction
         });
 
-        // --- STEP 3: PROCESS UPDATES ---
         for (const product of productsToProcess) {
             
             // Scenario A: There is a winner
@@ -68,7 +61,18 @@ const checkExpiredAuctions = async () => {
 
                 await product.update({ status: 'SOLD' }, { transaction });
 
-                // Notify Winner
+                await models.product_receipts.create({
+                    product_id: product.product_id,
+                    buyer_id: product.winner.user_id, // Winner is the buyer
+                    seller_id: product.seller_id,     // Product has seller_id by default
+                    amount: product.price_current,    // Final Auction Price
+                    created_at: new Date(),
+                    paid_by_buyer: false,
+                    confirmed_by_buyer: false,
+                    confirmed_by_seller: false,
+                    status: 'PENDING'
+                }, { transaction });
+
                 const winnerEmailContent = emailTemplates.auctionWinner(
                     product.winner.full_name,
                     product.name,
@@ -81,13 +85,10 @@ const checkExpiredAuctions = async () => {
                     html: winnerEmailContent.html
                 });
 
-                // Notify Losers
                 if (product.bids && product.bids.length > 0) {
                     const loserEmails = new Set();
                     product.bids.forEach(bid => {
-                        // Alias check: Ensure you access the user correctly (bid.user vs bid.bidder) based on your include above
                         const bidderUser = bid.user || bid.bidder; 
-                        
                         if (bidderUser && bidderUser.user_id !== product.winner.user_id) {
                             loserEmails.add(bidderUser.email);
                         }

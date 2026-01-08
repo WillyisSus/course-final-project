@@ -77,6 +77,11 @@ export default class products extends Model {
       allowNull: true,
       defaultValue: "ACTIVE"
     },
+    min_positive_rate_allow:{
+      type: DataTypes.FLOAT,   
+      allowNull: true,
+      defaultValue: 80.0
+    },
     tsv: {
       type: DataTypes.TSVECTOR,
       allowNull: true,

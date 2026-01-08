@@ -125,6 +125,22 @@ const authController = {
             return res.status(500).send({message: "Internal Server error"})
         }
     },
+    checkPermission: (permission) => (req, res, next) =>{
+        try {
+            if (!permission || permission.length === 0) {
+                next();
+            }
+            if (!req.user.role){
+                return res.status(403).json({ message: "Forbidden. No role assigned." });
+            }
+            if (!permission.includes(req.user.role)) {
+                return res.status(403).json({ message: "Forbidden. You don't have permission" });
+            }
+            next();
+        } catch (error) {
+            
+        }
+    },
     refreshToken: async (req, res) => {
         try {
             const authHeader = req.headers['authorization'];

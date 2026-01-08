@@ -48,6 +48,11 @@ export default class product_receipts extends Model {
         allowNull: true,
         defaultValue: false
       },
+      status: {
+        type: DataTypes.ENUM("PENDING","FINISHED","CANCELLED"),
+        allowNull: true,
+        defaultValue: "PENDING"
+      },
       created_at: {
         type: DataTypes.DATE,
         allowNull: false,

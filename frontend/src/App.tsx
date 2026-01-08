@@ -12,6 +12,10 @@ import ProductDetailPage from './pages/ProductDetailsPage'
 import { Toaster } from './components/ui/sonner'
 import PersonalProfilePage from './pages/PersonalProfilePage'
 import UploadProductPage from './pages/UploadProductPage'
+import UserProfileTab from './components/UserProfileTab'
+import SellerInfoTab from './components/SellerInfoTab'
+import AutoBidHistoryTab from './components/AutoBidHistoryTab'
+import ForbiddenPage from './pages/ForbiddenPage'
 const router = createBrowserRouter([
   {
     path:"",
@@ -28,7 +32,21 @@ const router = createBrowserRouter([
         Component: ProductDetailPage
       }, {
         path: "profile",
-        Component: PersonalProfilePage
+        element: <PersonalProfilePage/>,
+        children: [
+          {
+            index:true,
+            Component: UserProfileTab
+          },
+          {
+            path: "autobids",
+            Component: AutoBidHistoryTab
+          },
+          {
+            path: "seller",
+            Component: SellerInfoTab
+          }
+        ]
       }, {
         path: "upload",
         Component: UploadProductPage
@@ -48,6 +66,9 @@ const router = createBrowserRouter([
   },{
     path: "*",
     Component: NotFoundPage
+  }, {
+    path: "forbidden",
+    Component: ForbiddenPage
   }
 
 ])

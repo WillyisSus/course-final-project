@@ -170,13 +170,15 @@ const Navbar = () => {
                       <User className="w-4 h-4" /> Profile
                     </Link>
                   </DropdownMenuItem>
-                  {user.role === 'SELLER' && (
-                    <DropdownMenuItem className="cursor-pointer gap-2">
+                  <DropdownMenuItem asChild className="cursor-pointer gap-2">
+                    <Link to={"profile/autobids"}>
+                      <ListOrdered className="w-4 h-4" /> Bidding History
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild className="cursor-pointer gap-2">
+                    <Link to={"profile/seller"}>
                       <LayoutDashboard className="w-4 h-4" /> My Listings
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem className="cursor-pointer gap-2">
-                    <ListOrdered className="w-4 h-4" /> Bidding History
+                    </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem 

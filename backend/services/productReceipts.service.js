@@ -53,7 +53,12 @@ export const ProductReceiptService = {
       ]
     });
   },
-
+  async getReceiptByProductId(productId) {
+    if (!productId) throw new Error("Product ID is required");
+    return await models.product_receipts.findOne({
+      where: { product_id: productId },
+    });
+  },
   // 4. Update Receipt Status (Smart Update)
   async updateReceiptStatus(receiptId, userId, updateData) {
     const receipt = await models.product_receipts.findByPk(receiptId);

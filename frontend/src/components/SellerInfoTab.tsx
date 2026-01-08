@@ -8,12 +8,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from './ui/button';
+import { useAppSelector } from '@/store/hooks';
 import type { Product } from '@/types/product';
 
-const SellerInfoTab = ({ sellerId }: { sellerId: number }) => {
+const SellerInfoTab = () => {
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
-
+    const { user } = useAppSelector((state) => state.auth);
+    const sellerId = user?.user_id;
     useEffect(() => {
         const fetchSellerProducts = async () => {
             setLoading(true);

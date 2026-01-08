@@ -11,11 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
-
-interface UserProfileTabProps {
-    user: any; 
-}
-
+import { useAppSelector } from '@/store/hooks';
 interface UpgradeRequest {
     request_id: number;
     reason: string;
@@ -23,13 +19,15 @@ interface UpgradeRequest {
     created_at: string;
 }
 
-const UserProfileTab = ({ user }: UserProfileTabProps) => {
+const UserProfileTab = () => {
     const [request, setRequest] = useState<UpgradeRequest | null>(null);
     const [loadingRequest, setLoadingRequest] = useState(false);
-
+    const { user } = useAppSelector((state) => state.auth);
+    if (!user) return <div className="p-10 text-center text-muted-foreground">Please log in to view your profile.</div>;
     // 1. Check if user already submitted a request
     useEffect(() => {
         const fetchUpgradeRequest = async () => {
+            if (!user) return;
             if (user.role !== 'BIDDER') return;
             
             try {

@@ -90,7 +90,10 @@ export const ProductService = {
      
     });
   },
-
+  // Basic fetch, no associations
+  async findProductById(productId) {
+    return await models.products.findByPk(productId);
+  },
   // getting all the deep details for the single product page
   async findProductDetail(productId) {
     const product = await models.products.findOne({

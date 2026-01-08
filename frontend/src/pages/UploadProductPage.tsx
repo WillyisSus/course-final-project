@@ -42,6 +42,12 @@ type ProductFormValues = z.infer<typeof formSchema>;
 const UploadProductPage = () => {
     const navigate = useNavigate();
     const { user } = useSelector((state: any) => state.auth);
+    if (!user) {
+        navigate('/login');
+    }
+    if (user?.role !== 'SELLER' && user?.role !== 'ADMIN') {
+        navigate('/forbidden');
+    }
     const [categories, setCategories] = useState<Category[]>([]);
     
     // File state is managed manually since it's not natively supported by RHF + Zod perfectly yet

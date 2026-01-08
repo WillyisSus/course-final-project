@@ -1,5 +1,5 @@
-import { ProductReceiptService } from '../services/product_receipt.service.js';
-
+import { ProductService } from "../services/product.service";
+import { ProductReceiptService } from "../services/productReceipts.service";
 const productReceiptController = {
     // GET /api/receipts
     getAll: async (req, res) => {
@@ -44,14 +44,25 @@ const productReceiptController = {
     // POST /api/receipts
     postOne: async (req, res) => {
         try {
-            const { product_id, seller_id, amount } = req.body;
+            const {product_id} = req.body;
             const buyer_id = req.user.user_id;
-
+            if (!buyer_id || !product_id) 
+            {
+                return res.status(400).json({ message: "buyer_id and product_id are required" });
+            }
+            const oldReceipt = await ProductReceiptService.getReceiptByProductId(product_id);
+            if (oldReceipt) {
+                return res.status(400).json({ message: "Receipt for this product already exists" });
+            }
+            const product = await ProductService.findProductById(product_id);
+            if (!product) {
+                return res.status(404).json({ message: "Product not found" });
+            }
             const newReceipt = await ProductReceiptService.createReceipt({
-                product_id,
-                buyer_id,
-                seller_id,
-                amount
+                product_id: product.product_id,
+                buyer_id: product.winner_id,
+                seller_id: product.seller_id,
+                amount: product.price_current
             });
 
             res.status(201).json({ 

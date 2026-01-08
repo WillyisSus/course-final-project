@@ -104,7 +104,28 @@ export const createFeedbackSchema = z.object({
 });
 
 /**
- * 5. CATEGORY SCHEMAS
+ * 5. PRODUCT RECEIPT SCHEMAS
+ * Matches
+ */
+export const createProductReceiptSchema = z.object({
+  product_id: idSchema,
+  paid_by_buyer: z.boolean().optional().default(false),
+  confirmed_by_seller: z.boolean().optional().default(false),
+  status: z.enum(["PENDING", "FINISHED", "CANCELLED"]).optional().default("PENDING"),
+});
+
+export const updateProductReceiptSchema = z.object({
+  paid_by_buyer: z.boolean().optional(),
+  confirmed_by_seller: z.boolean().optional(),
+  status: z.enum(["PENDING", "FINISHED", "CANCELLED"]).optional(),
+});
+
+export const receiptIdSchema = z.object({
+  id: idSchema,
+});
+
+/**
+ * 6. CATEGORY SCHEMAS
  * Matches
  */
 export const createCategorySchema = z.object({
@@ -113,7 +134,7 @@ export const createCategorySchema = z.object({
 });
 
 /**
- * 6. SUB-RESOURCE SCHEMAS 
+ * 7. SUB-RESOURCE SCHEMAS 
  * (Images, Descriptions, Blocks, Upgrades)
  */
 export const createProductImageSchema = z.object({

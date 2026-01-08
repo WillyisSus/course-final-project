@@ -7,12 +7,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from './ui/button';
+import { useAppSelector } from '@/store/hooks';
 import type { AutoBidHistoryItem } from '@/types/bid';
 
-const AutoBidHistoryTab = ({ userId }: { userId: number }) => {
+const AutoBidHistoryTab = () => {
     const [autoBids, setAutoBids] = useState<AutoBidHistoryItem[]>([]);
     const [loading, setLoading] = useState(true);
-
+     const { user } = useAppSelector((state) => state.auth);
+    const userId = user?.user_id;
     useEffect(() => {
         const fetchAutoBids = async () => {
             setLoading(true);
