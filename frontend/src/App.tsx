@@ -17,6 +17,8 @@ import SellerInfoTab from './components/SellerInfoTab'
 import AutoBidHistoryTab from './components/AutoBidHistoryTab'
 import ForbiddenPage from './pages/ForbiddenPage'
 import CheckoutPage from './pages/CheckoutPage'
+import BlockedBidderTab from './components/BlockedBidderTab'
+import BlockedByProductTab from './components/BlockedByProductTab'
 const router = createBrowserRouter([
   {
     path:"",
@@ -46,6 +48,12 @@ const router = createBrowserRouter([
           {
             path: "seller",
             Component: SellerInfoTab
+          }, {
+            path: "blocked-products",
+            Component: BlockedByProductTab
+          }, {
+            path: "blocked-bidders",
+            Component: BlockedBidderTab
           }
         ]
       }, {

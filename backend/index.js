@@ -23,6 +23,7 @@ import watchlistRouter from './routes/watchlist.route.js';
 import upgradeRequestRouter from './routes/upgradeRequest.route.js';
 import paymentRouter from './routes/payment.route.js';
 import productReceiptRouter from './routes/productReceipts.route.js';
+import blockedBiddersRouter from './routes/blockedBidders.route.js';
 const PORT = 3000;
 configDotenv();
 
@@ -101,6 +102,7 @@ app.use('/api/watchlists', watchlistRouter)
 app.use('/api/upgrade-requests', upgradeRequestRouter)
 app.use('/api/payment', paymentRouter);
 app.use('/api/receipts', productReceiptRouter)
+app.use('/api/blocked-bidders', blockedBiddersRouter);
 
 const retryConnection = async (retriesLeft, delay) => {
     try {

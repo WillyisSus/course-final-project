@@ -14,6 +14,8 @@ const PersonalProfilePage = () => {
     const path = location.pathname;
     if (path.includes("/autobids")) return "autobids";
     if (path.includes("/seller")) return "seller";
+    if (path.includes("/blocked-bidders")) return "blocked-bidders";
+    if (path.includes("/blocked-products")) return "blocked-products";
     return "profile";
   };
 
@@ -35,6 +37,12 @@ const PersonalProfilePage = () => {
         break;
       case "seller":
         navigate("/profile/seller");
+        break;
+      case "blocked-bidders":
+        navigate("/profile/blocked-bidders");
+        break;
+      case "blocked-products":
+        navigate("/profile/blocked-products");
         break;
       default:
         navigate("/profile");
@@ -72,6 +80,8 @@ const PersonalProfilePage = () => {
           <TabsTrigger value="profile">Personal Profile</TabsTrigger>
           <TabsTrigger value="autobids">Auto-Bid History</TabsTrigger>
           <TabsTrigger value="seller">Seller Dashboard</TabsTrigger>
+          <TabsTrigger value="blocked-bidders">Blocked Bidders</TabsTrigger>
+          <TabsTrigger value="blocked-products">Blocked by</TabsTrigger>
         </TabsList>
       </Tabs>
 

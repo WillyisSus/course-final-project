@@ -4,7 +4,7 @@ import { sequelize } from '../utils/db.js'; //
 export const ProductService = {
 
   // I'll fetch active products that haven't expired yet for the main list
-  async findAllProducts({ 
+  async   findAllProducts({ 
     limit = 10, 
     offset = 0, 
     searchQuery = null, 

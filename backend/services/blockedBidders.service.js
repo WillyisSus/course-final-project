@@ -4,7 +4,10 @@ import models, { sequelize } from '../utils/db.js'; //
 export const BlockBidderService = {
 
   // Fetch all users blocked from a specific product
-  async findAllBlockedByProduct(productId) {
+  async findAllBlocks(){
+    return await models.blocked_bidders.findAll();
+  },
+  async findAllBlockedByProduct(productId, sellerId = null) {
     return await models.blocked_bidders.findAll({
       where: { product_id: productId }, //
       include: [
@@ -12,6 +15,43 @@ export const BlockBidderService = {
           model: models.users,
           as: 'user', //
           attributes: ['user_id', 'full_name', 'email']
+
+        }
+      ]
+    });
+  },
+  async findAllBlockedBySeller(sellerId) {
+    return await models.blocked_bidders.findAll({
+      include: [
+        {
+          model: models.products,
+          as: 'product',
+          where: { seller_id: sellerId },
+          attributes: ['product_id', 'name']
+        },
+        {
+          model: models.users,
+          as: 'user',
+          attributes: ['user_id', 'full_name', 'email']
+        }
+      ]
+    });
+  },
+  async getAllBlockedByUser(userId) {
+    return await models.blocked_bidders.findAll({
+      where: { user_id: userId }, 
+      include: [
+        {
+          model: models.products,
+          as: 'product',
+          attributes: ['product_id', 'name', 'seller_id'],
+          include: [
+            {
+              model: models.users,
+              as: 'seller',
+              attributes: ['user_id', 'full_name', 'email']
+            }
+          ]
         }
       ]
     });

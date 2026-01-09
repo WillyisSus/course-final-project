@@ -98,7 +98,7 @@ const ProductDetailPage = () => {
           `/products/${id}/is-blocked`
         );
         if (res.data.data) {
-          toast.error(`You are blocked from bidding on this product at:  ${new Date(res.data.data.created_at).toLocaleString()}. Reason: ${res.data.data.reason}`);
+          toast.error(`You are blocked from bidding on this product at:  ${new Date(res.data.data.blocked_at).toLocaleString()}. Reason: ${res.data.data.reason}`);
           navigate("/");
         }
       } catch (error) {
