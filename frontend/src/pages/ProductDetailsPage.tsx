@@ -13,6 +13,7 @@ import {
   AlertTriangle,
   Plus,
   FileText,
+  Heart,
 } from "lucide-react";
 import { toast } from "sonner"; // Ensure you have this installed, or remove toast calls
 import api from "@/lib/axios";
@@ -68,6 +69,8 @@ const ProductDetailPage = () => {
     id: number;
     name: string;
   } | null>(null);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [loadingFav, setLoadingFav] = useState(false);
   const socketRef = useRef<Socket | null>(null);
   const { user } = useAppSelector((state) => state.auth);
   // Conditional flags
@@ -92,6 +95,35 @@ const ProductDetailPage = () => {
   });
   // --- FETCH DATA---
   useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const res = await api.get(`/products/${id}`);
+        setProduct(res.data.data as Product);
+        document.title = res.data.data.name + " | Big Biddie";
+        if (res.data.data.category_id) {
+          const relatedRes = await api.get(
+            `/products?category_id=${res.data.data.category_id}&limit=6`
+          );
+          const filtered = relatedRes.data.data
+            .filter((p: any) => p.product_id !== Number(id))
+            .slice(0, 5);
+          setRelatedProducts(filtered);
+        }
+        
+      } catch (error) {
+        if ((error as any).response && (error as any).response.status === 404) {
+          toast.error("Product not found.");
+          navigate("/not-found");
+        } 
+        console.error("Failed to load product", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [id]);
+  useEffect(() => {
     const checkIfUserIsBlocked = async () => {
       try {
         const res = await api.get(
@@ -113,30 +145,7 @@ const ProductDetailPage = () => {
   useEffect(() => {
     if (isDescModalOpen) descForm.reset();
   }, [isDescModalOpen, descForm]);
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const res = await api.get(`/products/${id}`);
-        setProduct(res.data.data as Product);
-        document.title = res.data.data.name + " | Big Biddie";
-        if (res.data.data.category_id) {
-          const relatedRes = await api.get(
-            `/products?category_id=${res.data.data.category_id}&limit=6`
-          );
-          const filtered = relatedRes.data.data
-            .filter((p: any) => p.product_id !== Number(id))
-            .slice(0, 5);
-          setRelatedProducts(filtered);
-        }
-      } catch (error) {
-        console.error("Failed to load product", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, [id]);
+  
 
   useEffect(() => {
     const fetchBidsHistory = async () => {
@@ -177,6 +186,24 @@ const ProductDetailPage = () => {
     };
     if (id) fetchCurrentAutoBid();
   }, [id]);
+
+  // Check Favorite Status on Mount
+  useEffect(() => {
+    if (user && id) {
+      const checkFavorite = async () => {
+        try {
+          const res = await api.get(`/watchlists/${id}`);
+          if (res.data.data) {
+            setIsFavorite(true);
+          }
+        } catch (error) {
+          console.error("Failed to check favorite status", error);
+        }
+      };
+      checkFavorite();
+    }
+  }, [user, id]);
+
   // --- SOCKET CONNECTION ---
   useEffect(() => {
     socketRef.current = io("http://localhost:3000");
@@ -330,6 +357,26 @@ const ProductDetailPage = () => {
       toast.error("Failed to add description.");
     }
   };
+
+  const toggleFavorite = async () => {
+    if (!user) return;
+    setLoadingFav(true);
+    try {
+      if (isFavorite) {
+        await api.delete(`/watchlists/${id}`);
+        toast.success("Updated watchlist");
+      } else {
+        await api.post('/watchlists', { product_id: Number(id) });
+        toast.success("Added to favorites");
+      }
+      setIsFavorite(!isFavorite);
+    } catch (error) {
+      toast.error("Failed to update favorite");
+    } finally {
+      setLoadingFav(false);
+    }
+  };
+
   const scrollToBidding = () => {
     const section = document.getElementById("bidding-section");
     if (section) section.scrollIntoView({ behavior: "smooth" });
@@ -384,7 +431,7 @@ const ProductDetailPage = () => {
                   : isWinner
                   ? "bg-green-50 border-green-200"
                   : isQualifiedToBid 
-                  ? "bg-red-50 border-red-200"
+                  ? "bg-grey-50 border-grey-200"
                   : "bg-red-50 border-red-200"
               }`}
             >
@@ -507,36 +554,73 @@ const ProductDetailPage = () => {
                     <HandCoinsIcon className="w-6 h-6" />
                     Contact Seller & Checkout
                   </Button>
+                  {user && (
+                    <Button
+                      variant={isFavorite ? "secondary" : "outline"}
+                      onClick={toggleFavorite}
+                      disabled={loadingFav}
+                      className={`w-full h-12 text-lg font-bold gap-2 border-slate-200 shadow-md transition-all ${isFavorite ? "text-red-600 bg-red-50 border-red-100" : "text-slate-600"}`}
+                    >
+                      <Heart className={`w-5 h-5 ${isFavorite ? "fill-current" : ""}`} />
+                      {isFavorite ? "Favorited" : "Favorite"}
+                    </Button>
+                  )}
                 </div>
               ) : /* SCENARIO 3: EXPIRED & NON-WINNER */
               isExpired ? (
-                <div className="p-6 bg-gray-100 rounded-lg border border-gray-300 text-center flex flex-col items-center justify-center gap-2">
-                  <Clock className="w-8 h-8 text-gray-400" />
-                  <span className="font-bold text-gray-600 text-lg">
-                    Auction Ended
-                  </span>
-                  <p className="text-sm text-gray-500">
-                    Bidding for this item is over.
-                  </p>
+                <div className="flex flex-col gap-4">
+                  <div className="p-6 bg-gray-100 rounded-lg border border-gray-300 text-center flex flex-col items-center justify-center gap-2">
+                    <Clock className="w-8 h-8 text-gray-400" />
+                    <span className="font-bold text-gray-600 text-lg">
+                      Auction Ended
+                    </span>
+                    <p className="text-sm text-gray-500">
+                      Bidding for this item is over.
+                    </p>
+                  </div>
+                  {user && (
+                    <Button
+                      variant={isFavorite ? "secondary" : "outline"}
+                      onClick={toggleFavorite}
+                      disabled={loadingFav}
+                      className={`w-full h-12 text-lg font-bold gap-2 border-slate-200 shadow-md transition-all ${isFavorite ? "text-red-600 bg-red-50 border-red-100" : "text-slate-600"}`}
+                    >
+                      <Heart className={`w-5 h-5 ${isFavorite ? "fill-current" : ""}`} />
+                      {isFavorite ? "Favorited" : "Favorite"}
+                    </Button>
+                  )}
                 </div>
               ) : /* SCENARIO 4: UNQUALIFIED TO BID */
               !isQualifiedToBid ? (
-                <div className="p-6 bg-red-50 rounded-lg border border-red-200 text-center flex flex-col items-center justify-center gap-4">
-                  <AlertTriangle className="w-8 h-8 text-red-500" />
-                  <div className="space-y-2">
-                    <span className="font-bold text-red-700 text-lg">
-                      Not Qualified to Bid
-                    </span>
-                    <p className="text-sm text-red-600">
-                      You're not qualified to Bid. Please upgrade your positive rate to be at least 80%
-                    </p>
+                <div className="flex flex-col gap-4">
+                  <div className="p-6 bg-red-50 rounded-lg border border-red-200 text-center flex flex-col items-center justify-center gap-4">
+                    <AlertTriangle className="w-8 h-8 text-red-500" />
+                    <div className="space-y-2">
+                      <span className="font-bold text-red-700 text-lg">
+                        Not Qualified to Bid
+                      </span>
+                      <p className="text-sm text-red-600">
+                        You're not qualified to Bid. Please upgrade your positive rate to be at least 80%
+                      </p>
+                    </div>
+                    <Link
+                      to="/"
+                      className="w-full h-10 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition-colors flex items-center justify-center"
+                    >
+                      Go to Home Page
+                    </Link>
                   </div>
-                  <Link
-                    to="/"
-                    className="w-full h-10 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition-colors flex items-center justify-center"
-                  >
-                    Go to Home Page
-                  </Link>
+                  {user && (
+                    <Button
+                      variant={isFavorite ? "secondary" : "outline"}
+                      onClick={toggleFavorite}
+                      disabled={loadingFav}
+                      className={`w-full h-12 text-lg font-bold gap-2 border-slate-200 shadow-md transition-all ${isFavorite ? "text-red-600 bg-red-50 border-red-100" : "text-slate-600"}`}
+                    >
+                      <Heart className={`w-5 h-5 ${isFavorite ? "fill-current" : ""}`} />
+                      {isFavorite ? "Favorited" : "Favorite"}
+                    </Button>
+                  )}
                 </div>
               ) : (
                 /* SCENARIO 5: ACTIVE (Standard Bidder View) */
@@ -555,6 +639,17 @@ const ProductDetailPage = () => {
                     >
                       <HandCoinsIcon className="w-8 h-8" />
                       Buy Now
+                    </Button>
+                  )}
+                  {user && (
+                    <Button
+                      variant={isFavorite ? "secondary" : "outline"}
+                      onClick={toggleFavorite}
+                      disabled={loadingFav}
+                      className={`w-full h-12 text-lg font-bold gap-2 border-slate-200 shadow-md transition-all ${isFavorite ? "text-red-600 bg-red-50 border-red-100" : "text-slate-600"}`}
+                    >
+                      <Heart className={`w-5 h-5 ${isFavorite ? "fill-current" : ""}`} />
+                      {isFavorite ? "Favorited" : "Favorite"}
                     </Button>
                   )}
                 </div>

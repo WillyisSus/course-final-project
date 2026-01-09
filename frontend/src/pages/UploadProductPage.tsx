@@ -131,6 +131,9 @@ const UploadProductPage = () => {
       // Append all text fields
       Object.entries(values).forEach(([key, value]) => {
         if (value !== undefined && value !== null && value !== "") {
+          if (key === "price_buy_now" || key === "price_start" || key === "price_step") {
+            value = Number(value) * 1000; // Convert to smallest currency unit
+          }
           formData.append(key, String(value));
         }
       });
@@ -278,6 +281,7 @@ const UploadProductPage = () => {
           <Card>
             <CardHeader>
               <CardTitle>Pricing & Strategy</CardTitle>
+              <CardDescription>All value is of unit {Number(1000).toLocaleString()}₫</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -289,7 +293,7 @@ const UploadProductPage = () => {
                       <FormLabel>Starting Price</FormLabel>
                       <FormControl>
                         <div className="relative">
-                          <DollarSign className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                          <span className="absolute left-3 top-1  text-muted-foreground text-lg" >₫</span>
                           <Input
                             type="number"
                             className="pl-9"
@@ -297,7 +301,7 @@ const UploadProductPage = () => {
                             onChange={(e) => {
                               const value = e.target.value;
                               field.onChange(
-                                value === "" ? undefined : Number(value) * 1000
+                                value === "" ? undefined : Number(value)
                               );
                             }}
                             value={String(field.value ?? "")}
@@ -316,7 +320,7 @@ const UploadProductPage = () => {
                       <FormLabel>Step Price</FormLabel>
                       <FormControl>
                         <div className="relative">
-                          <DollarSign className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                          <span className="absolute left-3 top-1  text-muted-foreground text-lg" >₫</span>
                           <Input
                             type="number"
                             className="pl-9"
@@ -325,7 +329,7 @@ const UploadProductPage = () => {
                               const value = e.target.value;
 
                               field.onChange(
-                                value === "" ? undefined : Number(value) * 1000
+                                value === "" ? undefined : Number(value)
                               );
                             }}
                             value={String(field.value ?? "")}
@@ -344,7 +348,7 @@ const UploadProductPage = () => {
                       <FormLabel>Buy Now (Optional)</FormLabel>
                       <FormControl>
                         <div className="relative">
-                          <DollarSign className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                          <span className="absolute left-3 top-1  text-muted-foreground text-lg" >₫</span>
                           <Input
                             type="number"
                             className="pl-9"

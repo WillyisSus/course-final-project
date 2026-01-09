@@ -53,7 +53,7 @@ export const ProductService = {
       offset,
       attributes: [
         'product_id', 'name', 'price_current', 'price_buy_now', 
-        'end_date', 'start_date', 'created_at', 'winner_id', 'status',  // Added status to return attributes
+        'end_date', 'start_date', 'created_at', 'winner_id', 'status', 'allow_first_time_bidder',  // Added status to return attributes
         [
           sequelize.literal(`(
             SELECT COUNT(*)::int 

@@ -22,7 +22,12 @@ const seedDatabase = async () => {
         if (models.products) await models.products.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true, transaction: t });
         if (models.categories) await models.categories.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true, transaction: t });
         if (models.users) await models.users.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true, transaction: t });
-
+        if (models.watchlists) await models.watchlists.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true, transaction: t });
+        if (models.upgrade_requests) await models.upgrade_requests.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true, transaction: t });
+        if (models.product_receipts) await models.product_receipts.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true, transaction: t });
+        if (models.blocked_bidders) await models.blocked_bidders.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true, transaction: t });
+        if (models.messages) await models.messages.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true, transaction: t });
+        if (models.product_comments) await models.product_comments.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true, transaction: t });
         console.log("Database Cleaned.\n");
 
         // ============================================================
@@ -30,14 +35,14 @@ const seedDatabase = async () => {
         // ============================================================
         console.log("Creating Users...");
         const commonPassword = await bcrypt.hash("Password123!", 10);
-
+        const now = new Date();
         // Define users exactly as requested
         const usersData = [
-            { email: "vovietlong0845927889@gmail.com", full_name: "Super Admin", role: "ADMIN", password_hash: commonPassword, posstive_rating: 100, negative_rating: 0, address: "123 Admin St, Admin City", is_verified: true },
-            { email: "vovietlong01082004abc@gmail.com", full_name: "Main Seller", role: "SELLER", password_hash: commonPassword, posstive_rating: 100, negative_rating: 0, address: "123 Seller St, Seller City",  is_verified: true  },
-            { email: "aszx134679852abc@gmail.com", full_name: "Bidder Alpha", role: "BIDDER", password_hash: commonPassword,  posstive_rating: 100, negative_rating: 0, address: "123 Bidder St, Bidder City",  is_verified: true  },
-            { email: "vvlong22@clc.fitus.edu.vn", full_name: "Bidder Beta", role: "BIDDER", password_hash: commonPassword, posstive_rating: 100, negative_rating: 0, address: "123 Bidder St, Bidder City",  is_verified: true   },
-            { email: "willydalong01082004@gmail.com", full_name: "Bidder Gamma", role: "BIDDER", password_hash: commonPassword, posstive_rating: 100, negative_rating: 0, address: "123 Bidder St, Bidder City",  is_verified: true   },
+            { email: "vovietlong0845927889@gmail.com", full_name: "Super Admin", role: "ADMIN", password_hash: commonPassword, positive_rating: 100, negative_rating: 0,  address: "123 Admin St, Admin City", is_verified: true },
+            { email: "vovietlong01082004abc@gmail.com", full_name: "Main Seller", role: "SELLER", password_hash: commonPassword, positive_rating: 100, negative_rating: 0,seller_exp_date: (new Date(now)).setDate(now.getDate() + 7),address: "123 Seller St, Seller City",  is_verified: true  },
+            { email: "aszx134679852abc@gmail.com", full_name: "Bidder Alpha", role: "BIDDER", password_hash: commonPassword,  positive_rating: 100, negative_rating: 0, address: "123 Bidder St, Bidder City",  is_verified: true  },
+            { email: "vvlong22@clc.fitus.edu.vn", full_name: "Bidder Beta", role: "BIDDER", password_hash: commonPassword, positive_rating: 100, negative_rating: 0, address: "123 Bidder St, Bidder City",  is_verified: true   },
+            { email: "willydalong01082004@gmail.com", full_name: "Bidder Gamma", role: "BIDDER", password_hash: commonPassword, positive_rating: 100, negative_rating: 0, address: "123 Bidder St, Bidder City",  is_verified: true   },
         ];
 
         const createdUsers = await models.users.bulkCreate(usersData, { transaction: t, returning: true });
@@ -70,7 +75,7 @@ const seedDatabase = async () => {
         // ============================================================
         console.log("Creating 20 Products...");
         const productsList = [];
-        const now = new Date();
+        
         const threeDaysLater = new Date(now); threeDaysLater.setDate(threeDaysLater.getDate() + 3);
 
         for (let i = 1; i <= 20; i++) {
@@ -80,10 +85,10 @@ const seedDatabase = async () => {
                 name: `Rare Item #${i} - ${category.name} Edition`,
                 seller_id: seller.user_id,
                 category_id: category.category_id,
-                price_start: 100.00,
-                price_step: 10.00,
-                price_current: 100.00, // Initial state
-                price_buy_now: 1000.00,
+                price_start: 100.00*1000,
+                price_step: 10.00*1000,
+                price_current: null, // Initial state
+                price_buy_now: 1000.00*1000,
                 start_date: now,
                 end_date: threeDaysLater,
                 status: 'ACTIVE',
@@ -132,9 +137,9 @@ const seedDatabase = async () => {
 
             // Scenario: 3 Bidders with increasing Max Prices
             const bidScenarios = [
-                { bidder: bidders[0], maxPrice: 200 },
-                { bidder: bidders[1], maxPrice: 300 },
-                { bidder: bidders[2], maxPrice: 500 }
+                { bidder: bidders[0], maxPrice: 200*1000 },
+                { bidder: bidders[1], maxPrice: 300*1000 },
+                { bidder: bidders[2], maxPrice: 500*1000 }
             ];
 
             for (const scenario of bidScenarios) {
@@ -167,7 +172,7 @@ const seedDatabase = async () => {
         // (Not required, but shows ability to update and re-calculate)
         console.log("\nUpdating Auto-Bid Max Prices and Recalculating...");
         for (const product of productsList) {
-            const updatedMaxPrices = [250, 400, 600]; // New max prices for bidders 1, 2, 3
+            const updatedMaxPrices = [250*1000, 400*1000, 600*1000]; // New max prices for bidders 1, 2, 3
             for (let i = 0; i < bidders.length; i++) {
                 const bidder = bidders[i];
                 const newMax = updatedMaxPrices[i];

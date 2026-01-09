@@ -19,6 +19,7 @@ import ForbiddenPage from './pages/ForbiddenPage'
 import CheckoutPage from './pages/CheckoutPage'
 import BlockedBidderTab from './components/BlockedBidderTab'
 import BlockedByProductTab from './components/BlockedByProductTab'
+import FavoriteProductTab from './components/FavoriteProductTab'
 const router = createBrowserRouter([
   {
     path:"",
@@ -54,6 +55,9 @@ const router = createBrowserRouter([
           }, {
             path: "blocked-bidders",
             Component: BlockedBidderTab
+          }, {
+            path: "favorites",
+            Component: FavoriteProductTab
           }
         ]
       }, {

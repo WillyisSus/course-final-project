@@ -13,18 +13,23 @@ export const WatchlistService = {
           attributes: ['product_id', 'name', 'price_current', 'end_date', 'status'],
           include: [
              {
-               model: models.product_images,
-               as: 'product_images',
-               where: { is_primary: true },
-               required: false,
-               attributes: ['image_url']
+              model: models.users,
+              as: 'seller',
+              attributes: ['full_name']
              }
           ]
         }
       ]
     });
   },
-
+  async findWatchlistItem(userId, productId) {
+    return await models.watchlists.findOne({
+      where: {
+        user_id: userId,
+        product_id: productId
+      }
+    });
+  },
   async addToWatchlist(userId, productId) {
     // Check if product exists first
     const product = await models.products.findByPk(productId);

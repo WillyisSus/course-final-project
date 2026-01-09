@@ -48,6 +48,7 @@ export interface Product {
   start_date: string;
   end_date: string;
   is_auto_extend: boolean;
+  allow_first_time_bidder: boolean;
   status: 'ACTIVE' | 'SOLD' | 'EXPIRED';
   tsv?: string;
   bid_count?: number;

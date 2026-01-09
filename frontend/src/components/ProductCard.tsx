@@ -1,14 +1,16 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router";
+import { useSelector } from "react-redux";
+import api from "@/lib/axios";
 import { type Product } from "../types/product";
-import { Clock, Calendar } from "lucide-react";
+import { Clock, Calendar, Baby, Heart } from "lucide-react";
 
-// Shadcn Components
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 
-// --- Helper Logic ---
+// --- Helpers ---
 const maskName = (fullName?: string) => {
   if (!fullName) return "No Bids";
   const parts = fullName.split(" ");
@@ -25,7 +27,6 @@ const getTimeLeft = (endDate: string) => {
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
   const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
 
-  // Urgent: Less than 3 days
   if (days <= 3) {
     return {
       text: days === 0 ? `${hours}h left` : `${days}d ${hours}h left`,
@@ -33,7 +34,6 @@ const getTimeLeft = (endDate: string) => {
     };
   }
 
-  // Standard
   return {
     text: new Date(endDate).toLocaleDateString(),
     color: "text-gray-500",
@@ -45,13 +45,34 @@ interface ProductCardProps {
 }
 
 export const ProductCard = ({ product }: ProductCardProps) => {
+  const { user } = useSelector((state: any) => state.auth);
+  const [isFavorite, setIsFavorite] = useState(false);
   const timeLeft = getTimeLeft(product.end_date);
 
+  useEffect(() => {
+    if (user) {
+        const checkFavorite = async () => {
+            try {
+                const res = await api.get(`/watchlists`);
+                const favorites = res.data.data || [];
+                const found = favorites.some((item: any) => item.product_id === product.product_id);
+                setIsFavorite(found);
+            } catch (error) {
+                console.error("Failed to check favorite status", error);
+            }
+        };
+        checkFavorite();
+    }
+  }, [user, product.product_id]);
+
   return (
-    <Link to={`/products/${product.product_id}`} className="block h-full">
-      <Card className="h-full overflow-hidden hover:shadow-lg transition-all duration-300 group flex flex-col border-slate-200">
-        {/* 1. Image Section */}
-        <div className="relative h-48 bg-slate-100 overflow-hidden">
+    <Link
+      to={`/products/${product.product_id}`}
+      className="block h-full w-full"
+    >
+      <Card className="h-full overflow-hidden hover:shadow-xl transition-all duration-300 group flex flex-col border-slate-200">
+        
+        <div className="relative w-full aspect-4/3 bg-slate-100 overflow-hidden">
           {product.product_images?.[0] ? (
             <img
               src={`${product.product_images[0].image_url}`}
@@ -64,8 +85,23 @@ export const ProductCard = ({ product }: ProductCardProps) => {
             </div>
           )}
 
-          {/* Badge: Total Bids */}
-          <div className="absolute top-2 right-2">
+          {product.allow_first_time_bidder && (
+            <div className="absolute top-2 left-2 z-10">
+              <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white border-0 gap-1 shadow-sm px-2 py-0.5 text-[10px] sm:text-xs">
+                <Baby className="w-3 h-3" /> Newbie Friendly
+              </Badge>
+            </div>
+          )}
+
+          {isFavorite && (
+            <div className="absolute top-2 right-2 z-10">
+               <div className="bg-white/90 backdrop-blur-sm p-1.5 rounded-full shadow-sm">
+                  <Heart className="w-4 h-4 text-red-500 fill-current" />
+               </div>
+            </div>
+          )}
+
+          <div className="absolute bottom-2 right-2 z-10">
             <Badge
               variant="secondary"
               className="backdrop-blur-md bg-white/90 shadow-sm text-slate-700"
@@ -75,33 +111,29 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           </div>
         </div>
 
-        {/* 2. Content Section */}
-        <CardContent className="p-4 grow flex flex-col gap-3">
-          {/* Posted Date */}
+        <CardContent className="p-5 grow flex flex-col gap-3">
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Calendar className="w-3 h-3" />
+            <Calendar className="w-3.5 h-3.5" />
             <span>
               Posted {new Date(product.start_date).toLocaleDateString()}
             </span>
           </div>
 
-          {/* Name */}
           <h3
-            className="font-semibold text-base leading-tight text-slate-900 line-clamp-2 group-hover:text-blue-600 transition-colors"
+            className="font-bold text-lg leading-snug text-slate-900 line-clamp-2 group-hover:text-blue-600 transition-colors"
             title={product.name}
           >
             {product.name}
           </h3>
 
-          <Separator className="bg-slate-100" />
+          <Separator className="bg-slate-100 my-1" />
 
-          {/* Price Grid */}
-          <div className="grid grid-cols-2 gap-2 items-end">
+          <div className="grid grid-cols-2 gap-4 items-end">
             <div>
-              <p className="text-xs text-muted-foreground mb-0.5">
+              <p className="text-xs font-medium text-slate-500 mb-0.5 uppercase tracking-wide">
                 Current Bid
               </p>
-              <p className="text-lg font-bold text-blue-700">
+              <p className="text-xl font-bold text-blue-700">
                 {product.price_current
                   ? "₫" + Number(product.price_current).toLocaleString()
                   : "No bids"}
@@ -109,8 +141,10 @@ export const ProductCard = ({ product }: ProductCardProps) => {
             </div>
             {product.price_buy_now && (
               <div className="text-right">
-                <p className="text-xs text-muted-foreground mb-0.5">Buy Now</p>
-                <p className="text-sm font-medium text-slate-600">
+                <p className="text-xs font-medium text-slate-500 mb-0.5 uppercase tracking-wide">
+                  Buy Now
+                </p>
+                <p className="text-base font-semibold text-slate-700">
                   ₫{Number(product.price_buy_now).toLocaleString()}
                 </p>
               </div>
@@ -118,12 +152,10 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           </div>
         </CardContent>
 
-        {/* 3. Footer: Bidder & Time */}
-        <CardFooter className="p-4 pt-0 mt-auto flex items-center justify-between">
-          {/* Bidder Info */}
+        <CardFooter className="p-4 bg-slate-50/50 mt-auto flex items-center justify-between border-t border-slate-100">
           <div className="flex items-center gap-2">
-            <Avatar className="w-6 h-6 border border-slate-200">
-              <AvatarFallback className="text-[10px] bg-slate-100 text-slate-500">
+            <Avatar className="w-7 h-7 border-2 border-white shadow-sm">
+              <AvatarFallback className="text-[10px] bg-blue-100 text-blue-600 font-bold">
                 {product.winner ? product.winner.full_name.charAt(0) : "?"}
               </AvatarFallback>
             </Avatar>
@@ -132,11 +164,8 @@ export const ProductCard = ({ product }: ProductCardProps) => {
             </span>
           </div>
 
-          {/* Time Left */}
-          <div
-            className={`flex items-center gap-1.5 text-xs ${timeLeft.color}`}
-          >
-            <Clock className="w-3.5 h-3.5" />
+          <div className={`flex items-center gap-1.5 text-xs ${timeLeft.color}`}>
+            <Clock className="w-4 h-4" />
             <span>{timeLeft.text}</span>
           </div>
         </CardFooter>

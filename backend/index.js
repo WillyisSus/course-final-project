@@ -103,7 +103,6 @@ app.use('/api/upgrade-requests', upgradeRequestRouter)
 app.use('/api/payment', paymentRouter);
 app.use('/api/receipts', productReceiptRouter)
 app.use('/api/blocked-bidders', blockedBiddersRouter);
-
 const retryConnection = async (retriesLeft, delay) => {
     try {
         await sequelize.authenticate();

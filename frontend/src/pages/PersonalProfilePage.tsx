@@ -16,6 +16,7 @@ const PersonalProfilePage = () => {
     if (path.includes("/seller")) return "seller";
     if (path.includes("/blocked-bidders")) return "blocked-bidders";
     if (path.includes("/blocked-products")) return "blocked-products";
+    if (path.includes("/favorites")) return "favorites";
     return "profile";
   };
 
@@ -43,6 +44,9 @@ const PersonalProfilePage = () => {
         break;
       case "blocked-products":
         navigate("/profile/blocked-products");
+        break;
+      case "favorites":
+        navigate("/profile/favorites");
         break;
       default:
         navigate("/profile");
@@ -76,12 +80,13 @@ const PersonalProfilePage = () => {
         onValueChange={handleTabChange}
         className="w-full space-y-6"
       >
-        <TabsList className="grid w-full grid-cols-2 md:w-auto md:grid-cols-3 bg-muted/50 p-1">
+        <TabsList className="grid w-full h-fit grid-cols-2 md:w-auto md:grid-cols-3 bg-muted/50 p-1">
           <TabsTrigger value="profile">Personal Profile</TabsTrigger>
           <TabsTrigger value="autobids">Auto-Bid History</TabsTrigger>
           <TabsTrigger value="seller">Seller Dashboard</TabsTrigger>
           <TabsTrigger value="blocked-bidders">Blocked Bidders</TabsTrigger>
           <TabsTrigger value="blocked-products">Blocked by</TabsTrigger>
+          <TabsTrigger value="favorites">Favorites</TabsTrigger>
         </TabsList>
       </Tabs>
 

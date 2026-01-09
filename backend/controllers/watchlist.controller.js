@@ -22,18 +22,17 @@ const watchlistController = {
         try {
             const userId = req.user.user_id;
             const productId = req.params.id;
+            if (!productId) {
+                return res.status(400).json({ message: "Product ID is required" });
+            }
+            const item = await WatchlistService.findWatchlistItem(userId, productId);
 
-       
-            const items = await WatchlistService.findAllWatchlistItems(userId);
-            const isWatched = items.some(item => item.product_id == productId);
-
-            if (!isWatched) {
+            if (!item) {
                 return res.status(404).json({ message: "Product is not in your watchlist" });
             }
-
             res.json({ 
                 message: "Product is in your watchlist", 
-                data: { product_id: productId, is_watched: true } 
+                data: item 
             });
         } catch (error) {
             res.status(500).json({ message: error.message });
