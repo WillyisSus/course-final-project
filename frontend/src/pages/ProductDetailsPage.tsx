@@ -264,6 +264,8 @@ const ProductDetailPage = () => {
     });
     return () => {
       if (socketRef.current) {
+        socketRef.current.removeAllListeners('product_updated');
+        socketRef.current.removeAllListeners('new_comment');
         socketRef.current.emit("leave_product", id);
         socketRef.current.disconnect();
       }
@@ -310,9 +312,18 @@ const ProductDetailPage = () => {
     }
   };
   const handleBuyNow = async () => {
-    // TODO: Implement buy now logic here
-    // Close modal after implementation
-    setIsBuyNowModalOpen(false);
+    try {
+      toast.info("Processing Buy Now...");
+      const res = await api.post(`/receipts`, {product_id: Number(id)});
+      if (res.data.data && res.status === 201) {
+        toast.success("Buy Now successful! Redirecting to checkout...");
+        navigate("/checkout/" + product.product_id);
+      }
+    } catch (error) {
+      toast.error("Failed to process Buy Now. Please try again.");
+    } finally{
+      setIsBuyNowModalOpen(false);
+    }
   };
   const handleContactSeller = () => {
     navigate("/checkout/" + product.product_id);

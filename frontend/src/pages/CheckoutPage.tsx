@@ -4,7 +4,9 @@ import { useSelector } from "react-redux";
 import { io, Socket } from "socket.io-client";
 import api from "@/lib/axios";
 import { toast } from "sonner";
-
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {z} from "zod";
 import {
   Card,
   CardContent,
@@ -26,9 +28,42 @@ import {
   CheckCircle2,
   PackageCheck,
   Banknote,
+  Star,
+  ArrowUp,
+  StopCircleIcon,
+  XCircle,
 } from "lucide-react";
 import CheckoutButton from "@/components/CheckoutButton";
 import type { ProductImage, User, Category } from "@/types/product";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Textarea } from "@/components/ui/textarea";
 
 interface Receipt {
   receipt_id: number;
@@ -45,13 +80,19 @@ interface Receipt {
     name: string;
     product_images: ProductImage[];
     category: Category;
-    seller: User;
-    winner: User;
   };
   paid_by_buyer: boolean;
   confirmed_by_seller: boolean;
   confirmed_by_buyer: boolean;
+  seller: User;
+  buyer: User;
 }
+const ratingSchema = z.object({
+  rating_type: z.enum(["GOOD", "BAD"], {error: "Please select a rating type"}),
+  reason: z.string().min(5, "Reason must be at least 5 characters").max(200, "Reason must not exceed 200 characters"),
+});
+
+type RatingFormValues = z.infer<typeof ratingSchema>;
 
 const CheckoutPage = () => {
   const { productId } = useParams();
@@ -64,10 +105,23 @@ const CheckoutPage = () => {
   const [messages, setMessages] = useState<any[]>([]);
   const [messageInput, setMessageInput] = useState("");
   const [isSending, setIsSending] = useState(false);
+ // Add rating modal state
+  const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
+  const [partnerRating, setPartnerRating] = useState<number | null>(null);
+ // Add cancel confirmation modal state
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   const socketRef = useRef<Socket | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const ratingForm = useForm<RatingFormValues>({
+    resolver: zodResolver(ratingSchema),
+    defaultValues: {
+      rating_type: undefined,
+      reason: "",
+    },
+  });
   // 1. Fetch Receipt
   useEffect(() => {
     const fetchReceipt = async () => {
@@ -76,6 +130,7 @@ const CheckoutPage = () => {
         const data = Array.isArray(res.data.data)
           ? res.data.data[0]
           : res.data.data;
+        console.log(data);
         setReceipt(data);
       } catch (error) {
         console.error("Failed to load receipt", error);
@@ -90,9 +145,29 @@ const CheckoutPage = () => {
   const isOwner = user?.user_id === receipt?.seller_id;
   const partnerId = isOwner ? receipt?.buyer_id : receipt?.seller_id;
   const partnerName = isOwner
-    ? receipt?.product.winner?.full_name
-    : receipt?.product.seller?.full_name;
-
+    ? receipt?.buyer?.full_name
+    : receipt?.seller?.full_name;
+  // Fetch partner rating
+  useEffect(() => {
+    const fetchPartnerRating = async () => {
+      if (!partnerId) return;
+      try {
+        const res = await api.get(`/users/${partnerId}`);
+        const partnerData = res.data.data;
+        const positive = parseInt(partnerData.positive_rating) || 0;
+        const negative = parseInt(partnerData.negative_rating) || 0;
+        const total = positive + negative;
+        
+        if (total > 0) {
+          const percentage = Math.round((positive / total) * 100);
+          setPartnerRating(percentage);
+        }
+      } catch (error) {
+        console.error("Failed to fetch partner rating", error);
+      }
+    };
+    fetchPartnerRating();
+  }, [partnerId]);
   useEffect(() => {
     if (!receipt || !user || !partnerId) return;
 
@@ -121,6 +196,7 @@ const CheckoutPage = () => {
     });
 
     return () => {
+      socketRef.current?.removeAllListeners('new_transaction_message');
       socketRef.current?.disconnect();
     };
   }, [receipt, user, partnerId, productId]);
@@ -149,7 +225,37 @@ const CheckoutPage = () => {
       toast.error("Failed to update status");
     }
   };
+  const handleCancelTransaction = async () => {
+    if (!receipt) return;
+    
+    setIsCancelling(true);
+    try {
+      // Cancel the transaction
+      await api.put(`/receipts/${receipt.receipt_id}`, {
+        status: "CANCELLED",
+      });
 
+      // Create automatic negative feedback
+      await api.post(`/ratings`, {
+        rated_user_id: receipt.buyer_id,
+        rating_type: "BAD",
+        reason: "Payment was not committed appropriately by buyer",
+      });
+
+      toast.success("Transaction cancelled and feedback created");
+      setIsCancelModalOpen(false);
+      
+      // Navigate back after a short delay
+      setTimeout(() => {
+        navigate("/");
+      }, 1500);
+    } catch (error: any) {
+      console.error("Failed to cancel transaction", error);
+      toast.error(error.response?.data?.message || "Failed to cancel transaction");
+    } finally {
+      setIsCancelling(false);
+    }
+  };
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!messageInput.trim() || isSending) return;
@@ -189,7 +295,34 @@ const CheckoutPage = () => {
   const finalPrice = Number(receipt.amount);
   const EXCHANGE_RATE = 25000;
   const priceUSD = (finalPrice / EXCHANGE_RATE).toFixed(2);
-
+  const onRatingSubmit = async (data: RatingFormValues) => {
+    try {
+      await api.post(`/ratings`, {
+        rated_user_id: partnerId,
+        rating_type: data.rating_type,
+        reason: data.reason,
+      });
+      
+      toast.success("Rating submitted successfully!");
+      setIsRatingModalOpen(false);
+      ratingForm.reset();
+      
+      // Refresh partner rating
+      const res = await api.get(`/users/${partnerId}`);
+      const partnerData = res.data.data;
+      const positive = parseInt(partnerData.positive_rating) || 0;
+      const negative = parseInt(partnerData.negative_rating) || 0;
+      const total = positive + negative;
+      
+      if (total > 0) {
+        const percentage = Math.round((positive / total) * 100);
+        setPartnerRating(percentage);
+      }
+    } catch (error: any) {
+      console.error("Failed to submit rating", error);
+      toast.error(error.response?.data?.message || "Failed to submit rating");
+    }
+  };
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <header className="bg-white border-b px-6 py-4 flex items-center justify-between sticky top-0 z-10">
@@ -402,18 +535,30 @@ const CheckoutPage = () => {
                   receipt.paid_by_buyer &&
                   !receipt.confirmed_by_seller && (
                     <Button
-                      className="w-full bg-blue-600 hover:bg-blue-700"
+                      className="w-2/3 bg-blue-600 hover:bg-blue-700"
                       onClick={() => handleUpdateStatus("confirm_payment")}
                     >
                       <CheckCircle2 className="w-4 h-4 mr-2" />
                       Confirm Payment & Ship
                     </Button>
                   )}
+                {
+                  isOwner && (
+                    <Button
+                      variant={"secondary"}
+                      className="w-2/3 bg-red-500 hover:bg-red-600 text-white"
+                    >
+                      <XCircle className="w-4 h-4 mr-2" />
+                      Cancel Transaction
+                    </Button>
+                  )
+                }
                 {!isOwner &&
-                  receipt.confirmed_by_seller &&
+                  receipt.paid_by_buyer &&
                   !receipt.confirmed_by_buyer && (
                     <Button
-                      className="w-full bg-purple-600 hover:bg-purple-700"
+                      disabled={!receipt.confirmed_by_buyer}
+                      className="w-2/3 bg-blue-600 hover:bg-blue-700"
                       onClick={() => handleUpdateStatus("confirm_receipt")}
                     >
                       <PackageCheck className="w-4 h-4 mr-2" />
@@ -421,7 +566,7 @@ const CheckoutPage = () => {
                     </Button>
                   )}
                 {receipt.confirmed_by_buyer && (
-                  <div className="w-full p-3 bg-green-100 text-green-800 rounded-lg text-center font-bold text-sm border border-green-200">
+                  <div className="w-2/3 p-3 bg-green-100 text-green-800 rounded-lg text-center font-bold text-sm border border-green-200">
                     🎉 Transaction Completed Successfully!
                   </div>
                 )}
@@ -453,6 +598,22 @@ const CheckoutPage = () => {
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />{" "}
                     Online
                   </CardDescription>
+                </div>
+                <div className="flex items-center gap-2">
+                  {partnerRating !== null && (
+                    <Badge variant="secondary" className="flex items-center gap-1">
+                      <ArrowUp className="w-3 h-3 fill-green-500 text-green-500" />
+                      Rating: {partnerRating}%
+                    </Badge>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setIsRatingModalOpen(true)}
+                    className="text-xs"
+                  >
+                    Rate
+                  </Button>
                 </div>
               </CardHeader>
 
@@ -515,6 +676,118 @@ const CheckoutPage = () => {
           </div>
         </div>
       </main>
+      <Dialog open={isRatingModalOpen} onOpenChange={setIsRatingModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Rate {partnerName}</DialogTitle>
+            <DialogDescription>
+              Share your experience with this trading partner
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...ratingForm}>
+            <form onSubmit={ratingForm.handleSubmit(onRatingSubmit)} className="space-y-4">
+              <FormField
+                control={ratingForm.control}
+                name="rating_type"
+                render={({ field }) => (
+                  <FormItem className="space-y-3">
+                    <FormLabel>Rating Type</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        className="flex flex-col space-y-1"
+                      >
+                        <FormItem className="flex items-center space-x-3 space-y-0">
+                          <FormControl>
+                            <RadioGroupItem value="GOOD" />
+                          </FormControl>
+                          <FormLabel className="font-normal cursor-pointer">
+                            👍 Good - Positive experience
+                          </FormLabel>
+                        </FormItem>
+                        <FormItem className="flex items-center space-x-3 space-y-0">
+                          <FormControl>
+                            <RadioGroupItem value="BAD" />
+                          </FormControl>
+                          <FormLabel className="font-normal cursor-pointer">
+                            👎 Bad - Negative experience
+                          </FormLabel>
+                        </FormItem>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={ratingForm.control}
+                name="reason"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Reason</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Please explain your rating (5-200 characters)..."
+                        className="resize-none"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsRatingModalOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit">Submit Rating</Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+      <AlertDialog open={isCancelModalOpen} onOpenChange={setIsCancelModalOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel Transaction?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <p>
+                Are you sure you want to cancel this transaction with{" "}
+                <span className="font-semibold text-gray-900">
+                  {receipt?.buyer?.full_name || "Buyer"}
+                </span>{" "}
+                for product{" "}
+                <span className="font-semibold text-gray-900">
+                  {receipt?.product.name}
+                </span>
+                ?
+              </p>
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <p className="text-sm text-red-800">
+                  <span className="font-semibold">⚠️ Warning:</span> This action cannot be undone. A negative feedback will be created automatically for this buyer with reason: "Payment was not committed appropriately by buyer"
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isCancelling}>
+              Keep Transaction
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleCancelTransaction}
+              disabled={isCancelling}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isCancelling ? "Cancelling..." : "Cancel Transaction"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -71,6 +71,16 @@ export const ProductReceiptService = {
               required: false
             }
           ]
+        },
+        { 
+          model: models.users, 
+          as: 'buyer', 
+          attributes: ['user_id', 'full_name', 'email'] 
+        },
+        { 
+          model: models.users, 
+          as: 'seller', 
+          attributes: ['user_id', 'full_name', 'email'] 
         }
       ]
     });
@@ -97,6 +107,7 @@ export const ProductReceiptService = {
     // Seller Actions
     if (isSeller) {
         if (updateData.confirmed_by_seller !== undefined) receipt.confirmed_by_seller = updateData.confirmed_by_seller;
+        if (updateData.status !== undefined) receipt.status = updateData.status;
     }
 
     await receipt.save();

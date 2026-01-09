@@ -24,6 +24,7 @@ import upgradeRequestRouter from './routes/upgradeRequest.route.js';
 import paymentRouter from './routes/payment.route.js';
 import productReceiptRouter from './routes/productReceipts.route.js';
 import blockedBiddersRouter from './routes/blockedBidders.route.js';
+import userRouter from './routes/user.route.js';
 const PORT = 3000;
 configDotenv();
 
@@ -103,6 +104,8 @@ app.use('/api/upgrade-requests', upgradeRequestRouter)
 app.use('/api/payment', paymentRouter);
 app.use('/api/receipts', productReceiptRouter)
 app.use('/api/blocked-bidders', blockedBiddersRouter);
+app.use('/api/users', userRouter);
+
 const retryConnection = async (retriesLeft, delay) => {
     try {
         await sequelize.authenticate();

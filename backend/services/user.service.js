@@ -40,7 +40,13 @@ export const UserService = {
     }
     return user;
   },
-
+  async findAllUsers() {
+    return await models.users.findAll({
+      attributes: {
+        exclude: ['password_hash', 'refresh_token'] // keeping secrets secret
+      }
+    });
+  },
   // helper to find by email (useful for login flows), explicitly requesting the password if needed
   async findUserByEmail(email, withPassword = false) {
     const options = {

@@ -63,13 +63,17 @@ const productReceiptController = {
             if (!product) {
                 return res.status(404).json({ message: "Product not found" });
             }
+            await product.update({
+                status: 'EXPIRED',
+                winner_id: buyer_id,
+                price_current: product.price_buy_now || product.price_current
+            });
             const newReceipt = await ProductReceiptService.createReceipt({
                 product_id: product.product_id,
                 buyer_id: product.winner_id,
                 seller_id: product.seller_id,
                 amount: product.price_current
             });
-
             res.status(201).json({ 
                 message: "Receipt created successfully", 
                 data: newReceipt 

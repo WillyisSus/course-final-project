@@ -10,9 +10,9 @@ const productController = {
     // GET /api/products
     getAll: async (req, res) => {
         try {
-            const limit = parseInt(req.query.limit) || 10;
-            const page = parseInt(req.query.page) || 1;
-            const offset = (page - 1) * limit;
+            const limit = parseInt(req.query.limit) || null;
+            const page = parseInt(req.query.page) || null;
+            const offset = limit && page ? (page - 1) * limit: 0;
             
             const filters = {
                 searchQuery: req.query.search || null,

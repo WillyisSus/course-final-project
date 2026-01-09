@@ -16,7 +16,7 @@ export const ProductService = {
   } = {}) {
     console.log('Search Query:', searchQuery);
     const whereClause = {};
-
+    
     // Only filter by status if a specific status is requested (pass null to get EVERYTHING)
     if (status === 'ACTIVE') {
       whereClause.end_date = { [Op.gt]: new Date() };
