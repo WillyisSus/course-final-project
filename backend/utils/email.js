@@ -81,5 +81,19 @@ export const emailTemplates = {
         <p>Your item will be processed shortly. You can track the status and contact with the seller in your account dashboard.</p>
       </div>
     `
+  }),
+
+  // E. Block Notification
+  blockNotification: (userName, productName, reason) => ({
+    subject: "Your Bids have been rejected by seller",
+    html: `
+      <div style="font-family: sans-serif; padding: 20px;">
+        <h2>Bids Refejection Notice</h2>
+        <p>Dear ${userName},</p>
+        <p>Your bids have be rejected from the product ${productName} by seller </p>
+        <p><b>${reason || 'Policy violation'}</b></p>
+        <p>If you believe this is a mistake, please contact support so we can review your case.</p>
+      </div>
+    `
   })
 };

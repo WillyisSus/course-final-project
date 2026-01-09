@@ -21,6 +21,11 @@ export default class product_descriptions extends Model {
     content: {
       type: DataTypes.TEXT,
       allowNull: false
+    },
+    created_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      defaultValue: Sequelize.Sequelize.literal('CURRENT_TIMESTAMP')
     }
   }, {
     sequelize,

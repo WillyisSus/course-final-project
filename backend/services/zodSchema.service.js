@@ -99,7 +99,7 @@ export const updateAutoBidSchema = z.object({
 export const createFeedbackSchema = z.object({
   product_id: idSchema,
   to_user_id: idSchema, 
-  rating: z.coerce.number().int().min(1).max(5), // 1-5 stars
+  rating: z.coerce.number().int().min(-1).max(1), 
   comment: z.string().optional(),
 });
 
@@ -149,7 +149,7 @@ export const createProductDescriptionSchema = z.object({
 });
 
 export const createBlockBidderSchema = z.object({
-  userIdToBlock: idSchema, // Input maps to 'user_id' in DB
+  user_id: idSchema, // Input maps to 'user_id' in DB
   reason: z.string().max(255).optional(), //
 });
 

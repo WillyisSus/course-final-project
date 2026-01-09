@@ -102,7 +102,7 @@ export const ProductService = {
         {
           model: models.product_descriptions,
           as: 'product_descriptions', //
-          attributes: ['content']
+          attributes: ['content', 'desc_id', 'created_at']
         },
         {
           model: models.product_images,
@@ -200,5 +200,5 @@ export const ProductService = {
 
       // hard delete since no interaction has happened yet
       return await product.destroy();
-  }
+  },
 };

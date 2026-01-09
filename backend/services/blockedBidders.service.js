@@ -1,4 +1,5 @@
-import models from '../utils/db.js'; //
+import { Op } from 'sequelize';
+import models, { sequelize } from '../utils/db.js'; //
 
 export const BlockBidderService = {
 
@@ -15,29 +16,84 @@ export const BlockBidderService = {
       ]
     });
   },
-
+  async findBlockEntry(productId, userId) {
+    return await models.blocked_bidders.findOne({
+      where: { product_id: productId, user_id: userId }
+    });
+  },
   // Block a user (Create)
   async createBlock(productId, sellerId, userIdToBlock, reason) {
     // 1. Verify ownership: Only the seller can block people from their product
-    const product = await models.products.findByPk(productId);
-    if (!product) throw new Error('Product not found');
-    
-    if (product.seller_id !== sellerId) {
-      throw new Error('Unauthorized: You can only block bidders on your own products');
-    }
+    return await sequelize.transaction(async (t) => {
+      const product = await models.products.findByPk(productId , {transaction: t});
+      
+      if (!product) throw new Error('Product not found');
+      
+      if (product.seller_id !== sellerId) {
+        throw new Error('Unauthorized: You can only block bidders on your own products');
+      }
 
-    // 2. Prevent blocking yourself
-    if (userIdToBlock === sellerId) {
-      throw new Error('You cannot block yourself');
-    }
-
-    // 3. Create the block entry
-    return await models.blocked_bidders.create({
-      product_id: productId,
-      user_id: userIdToBlock,
-      reason: reason || 'Blocked by seller',
-      blocked_at: new Date()
+      // 2. Prevent blocking yourself
+      if (userIdToBlock === sellerId) {
+        throw new Error('You cannot block yourself');
+      }
+      const existingBlock = await models.blocked_bidders.findOne({
+        where: {
+          product_id: productId,
+          user_id: userIdToBlock
+        },
+        transaction: t
+      });
+      if (existingBlock) {
+        throw new Error('User is already blocked from this product');
+      }
+      // 3. Create the block entry
+      const newBlock = await models.blocked_bidders.create({
+        product_id: productId,
+        user_id: userIdToBlock,
+        reason: reason || 'Blocked by seller',
+        blocked_at: new Date()
+      }, {transaction: t});
+      if (userIdToBlock === product.winner_id) {
+        // If the blocked user was the winner, remove them as winner
+        const highestNonWinnerBid = await models.bids.findOne({
+          where: {
+            product_id: productId,
+            bidder_id : { [Op.ne]: userIdToBlock }
+          },
+          order: [['amount', 'DESC']],
+          transaction: t
+        });
+        if (highestNonWinnerBid) {
+          await models.products.update(
+            { winner_id: highestNonWinnerBid.bidder_id, price_current: highestNonWinnerBid.amount},
+            { where: { product_id: productId }, transaction: t }
+          );
+        }else{
+          await models.products.update(
+            { winner_id: null, price_current: null},
+            { where: { product_id: productId }, transaction: t }
+          );
+        }
+      }
+      // Clean up auto-bids from the blocked user for this product
+      await models.bids.destroy({
+        where: {
+          product_id: productId,
+          bidder_id: userIdToBlock
+        },
+        transaction: t
+      });
+      await models.auto_bids.destroy({
+        where: {
+          product_id: productId,
+          bidder_id: userIdToBlock
+        },
+        transaction: t
+      });
+      return newBlock;
     });
+    
   },
 
   // Update the reason for a block

@@ -70,14 +70,19 @@ const ProductDetailPage = () => {
   } | null>(null);
   const socketRef = useRef<Socket | null>(null);
   const { user } = useAppSelector((state) => state.auth);
+  // Conditional flags
   const isOwner = Boolean(
     user && product.seller_id && user.user_id === product.seller_id
+  );
+  const isQualifiedToBid = Boolean(
+    (user && (parseInt(user.positive_rating)*1.0 / (parseInt(user.positive_rating) + parseInt(user.negative_rating)) >= 0.8))
   );
   const isExpired =
     product.status === "SOLD" ||
     product.status === "EXPIRED" ||
     new Date(product.end_date) < new Date();
   const isWinner = Boolean(user && product.winner_id === user.user_id);
+
   const navigate = useNavigate();
   const blockForm = useForm<BlockFormValues>({
     resolver: zodResolver(blockSchema),
@@ -86,6 +91,22 @@ const ProductDetailPage = () => {
     resolver: zodResolver(descriptionSchema),
   });
   // --- FETCH DATA---
+  useEffect(() => {
+    const checkIfUserIsBlocked = async () => {
+      try {
+        const res = await api.get(
+          `/products/${id}/is-blocked`
+        );
+        if (res.data.data) {
+          toast.error(`You are blocked from bidding on this product at:  ${new Date(res.data.data.created_at).toLocaleString()}. Reason: ${res.data.data.reason}`);
+          navigate("/");
+        }
+      } catch (error) {
+        console.error("Failed to check block status", error);
+      }
+    };
+    checkIfUserIsBlocked();
+  }, [id]);
   useEffect(() => {
     if (bidderToBlock) blockForm.reset();
   }, [bidderToBlock, blockForm]);
@@ -98,7 +119,7 @@ const ProductDetailPage = () => {
       try {
         const res = await api.get(`/products/${id}`);
         setProduct(res.data.data as Product);
-
+        document.title = res.data.data.name + " | Big Biddie";
         if (res.data.data.category_id) {
           const relatedRes = await api.get(
             `/products?category_id=${res.data.data.category_id}&limit=6`
@@ -277,11 +298,14 @@ const ProductDetailPage = () => {
     if (!bidderToBlock) return;
 
     try {
-      await api.post(`/products/${id}/block-user`, {
+      await api.post(`/products/${id}/block`, {
         user_id: bidderToBlock.id,
         reason: data.reason, // Send the reason
       });
       toast.success(`Blocked ${bidderToBlock.name} successfully.`);
+      setBidsHistory((prev) =>
+        prev.filter((bid) => bid.bidder_id !== bidderToBlock.id)
+      );
       setBidderToBlock(null);
     } catch (error: any) {
       console.error("Failed to block user", error);
@@ -290,13 +314,10 @@ const ProductDetailPage = () => {
   };
   const onDescriptionSubmit = async (data: DescriptionFormValues) => {
     try {
-      const res = await api.post("/product-descriptions", {
-        product_id: Number(id),
+      const res = await api.post(`/products/${id}/description`, {
         content: data.content,
       });
-
       toast.success("Description added successfully!");
-
       const newDesc = res.data.data || { content: data.content };
       setProduct((prev) => ({
         ...prev,
@@ -362,7 +383,9 @@ const ProductDetailPage = () => {
                   ? "bg-amber-50 border-amber-200"
                   : isWinner
                   ? "bg-green-50 border-green-200"
-                  : "bg-gray-50 border-gray-100"
+                  : isQualifiedToBid 
+                  ? "bg-red-50 border-red-200"
+                  : "bg-red-50 border-red-200"
               }`}
             >
               <div className="flex items-start justify-between">
@@ -496,8 +519,27 @@ const ProductDetailPage = () => {
                     Bidding for this item is over.
                   </p>
                 </div>
+              ) : /* SCENARIO 4: UNQUALIFIED TO BID */
+              !isQualifiedToBid ? (
+                <div className="p-6 bg-red-50 rounded-lg border border-red-200 text-center flex flex-col items-center justify-center gap-4">
+                  <AlertTriangle className="w-8 h-8 text-red-500" />
+                  <div className="space-y-2">
+                    <span className="font-bold text-red-700 text-lg">
+                      Not Qualified to Bid
+                    </span>
+                    <p className="text-sm text-red-600">
+                      You're not qualified to Bid. Please upgrade your positive rate to be at least 80%
+                    </p>
+                  </div>
+                  <Link
+                    to="/"
+                    className="w-full h-10 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition-colors flex items-center justify-center"
+                  >
+                    Go to Home Page
+                  </Link>
+                </div>
               ) : (
-                /* SCENARIO 4: ACTIVE (Standard Bidder View) */
+                /* SCENARIO 5: ACTIVE (Standard Bidder View) */
                 <div className="flex flex-col shrink-0 gap-4 items-center justify-end">
                   <Button
                     onClick={scrollToBidding}
@@ -529,8 +571,9 @@ const ProductDetailPage = () => {
         <div className="bg-grey-200 border border-gray-200 w-full h-[80%] scroll-y-auto p-4 rounded-md">
           {product.product_descriptions?.length > 0 ? (
             product.product_descriptions?.map((desc, index) => (
-              <p key={index} className="text-gray-700 mb-4 whitespace-pre-line">
-                {desc.content}
+              <p key={index} className="flex-col flex gap-2 text-gray-700 mb-4 whitespace-pre-line">
+                {desc.created_at && <span className="font-light text-sm text-gray-500">{new Date(desc.created_at).toLocaleString()}</span>}
+                <span className="font-medium">{desc.content}</span>
               </p>
             ))
           ) : (

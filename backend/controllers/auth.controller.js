@@ -47,7 +47,9 @@ const authController = {
                     role: user.role, 
                     email: user.email, 
                     full_name: user.full_name, 
-                    is_verified: user.is_verified
+                    is_verified: user.is_verified,
+                    positive_rating: user.positive_rating,
+                    negative_rating: user.negative_rating
                 }});         
         } catch (error) {
             console.error("Login Error:", error);

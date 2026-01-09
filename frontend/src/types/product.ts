@@ -6,7 +6,9 @@ export interface ProductImage {
 }
 
 export interface ProductDescription {
+  desc_id: number;
   content: string;
+  created_at: string;
 }
 
 export interface Category {

@@ -1,7 +1,11 @@
+import { check } from "zod";
+import { BlockBidderService } from "../services/blockedBidders.service.js";
 import { ProductService } from "../services/product.service.js";
 import { ProductCommentService } from "../services/productComments.service.js";
 import { ProductDescriptionService } from "../services/productDescription.service.js";
 import { ProductImageService } from "../services/productImages.service.js";
+import { UserService } from "../services/user.service.js";
+import { emailTemplates, sendEmail } from "../utils/email.js";
 const productController = {
     // GET /api/products
     getAll: async (req, res) => {
@@ -123,17 +127,56 @@ const productController = {
     // Custom endpoint: POST /api/products/:id/block
     blockBidder: async (req, res) => {
         try {
+
             const sellerId = req.user.user_id;
-            const { userIdToBlock, reason } = req.body;
-            
-            const result = await ProductService.blockBidder(req.params.id, sellerId, userIdToBlock, reason);
+            const { user_id, reason } = req.body;
+            if (!user_id || reason === undefined || req.params.id === undefined) {
+                return res.status(400).json({ message: "user_id and product_id are required" });
+            }
+            const result = await BlockBidderService.createBlock(req.params.id, sellerId, user_id, reason);
+            const getDataToSendEmail = await ProductService.findProductById(req.params.id);
+            const blockedUser = await UserService.findUserById(user_id);
+            if (blockedUser && getDataToSendEmail) {
+                const {subject, html} = emailTemplates.blockNotification(blockedUser.full_name, getDataToSendEmail.name, reason)
+                await sendEmail({to: blockedUser.email, subject, html})
+            }
             res.status(201).json({ message: "User blocked from this product", data: result });
         } catch (error) {
             console.error("Error in blockBidder:", error);
             res.status(400).json({ message: error.message });
         }
     },
-    
+    // Custom endpoint: POST /api/products/:id/description
+    addDescription: async (req, res) => {
+        try {
+            const sellerId = req.user.user_id;
+            const productId = req.params.id;
+            const { content } = req.body;
+            if (!content) {
+                return res.status(400).json({ message: "Description content is required" });
+            }
+            const result = await ProductDescriptionService.createDescription(productId, sellerId, content);
+            res.status(201).json({ message: "Product description added", data: result });
+        }
+        catch (error) {
+            console.error("Error in addDescription:", error);
+            res.status(400).json({ message: error.message });
+        }
+    },
+    checkBidderBlocked: async (req, res) => {
+        try {
+            const productId = req.params.id;
+            const userId = req.user.user_id;
+            const blockEntry = await BlockBidderService.findBlockEntry(productId, userId);
+            res.json({ 
+                message: "Block status retrieved", 
+                data: blockEntry 
+            });
+        } catch (error) {
+            console.error("Error in checkBidderBlocked:", error);
+            res.status(500).json({ message: error.message });
+        }
+    }   
 }
 
 export default productController;

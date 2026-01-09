@@ -5,6 +5,8 @@ interface User {
     user_id: number;
     email: string;
     full_name: string;
+    positive_rating: string;
+    negative_rating: string;
     role: 'BIDDER' | 'SELLER' | 'ADMIN';
     is_verified: boolean; // <--- Make sure this is here
 }
