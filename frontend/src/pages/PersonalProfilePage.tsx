@@ -18,6 +18,7 @@ const PersonalProfilePage = () => {
     if (path.includes("/blocked-bidders")) return "blocked-bidders";
     if (path.includes("/blocked-products")) return "blocked-products";
     if (path.includes("/favorites")) return "favorites";
+    if (path.includes("/transactions")) return "transactions";
     return "profile";
   };
 
@@ -45,6 +46,9 @@ const PersonalProfilePage = () => {
         break;
       case "favorites":
         navigate("/profile/favorites");
+        break;
+      case "transactions":
+        navigate("/profile/transactions");
         break;
       default:
         navigate("/profile");
@@ -81,6 +85,7 @@ const PersonalProfilePage = () => {
           <TabsTrigger value="blocked-bidders">Blocked Bidders</TabsTrigger>
           <TabsTrigger value="blocked-products">Blocked by</TabsTrigger>
           <TabsTrigger value="favorites">Favorites</TabsTrigger>
+          <TabsTrigger value="transactions">Transactions</TabsTrigger>
         </TabsList>
       </Tabs>
 

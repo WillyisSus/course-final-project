@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import type { AutoBid, Bid } from "@/types/bid";
@@ -151,6 +151,7 @@ const BiddingSection = ({
           {/* ... (Keep Form JSX unchanged) ... */}
           <CardHeader className="pb-2">
             <CardTitle>Place Your Maximum Bid</CardTitle>
+            <CardDescription>If you want to place a maximum price at lease <span className="font-medium text-blue-600">Buy Now Price</span>, you can win this product at that price.</CardDescription>
           </CardHeader>
           <CardContent>
             <form

@@ -16,6 +16,12 @@ import {
   Ratio,
   ThumbsUp,
   X,
+  CheckCircle2,
+  Clock,
+  XCircle,
+  Banknote,
+  UserCheck,
+  Truck,
 } from "lucide-react"; // Added Icon
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -144,7 +150,16 @@ const SellerInfoTab = () => {
         <Skeleton className="h-64 w-full" />
       </div>
     );
-
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "FINISHED":
+        return <Badge className="bg-green-600 hover:bg-green-700"><CheckCircle2 className="w-3 h-3 mr-1"/> Finished</Badge>;
+      case "CANCELED":
+        return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1"/> Cancelled</Badge>;
+      default:
+        return <Badge variant="secondary" className="text-blue-600 bg-blue-50 hover:bg-blue-100"><Clock className="w-3 h-3 mr-1"/> Pending</Badge>;
+    }
+  };
   const renderTable = (data: Product[], emptyMsg: string, showReceiptStatus:boolean = false) => (
     <div className="rounded-md border">
       <Table>
@@ -154,6 +169,7 @@ const SellerInfoTab = () => {
             <TableHead>Current Price</TableHead>
             <TableHead>Bids</TableHead>
             <TableHead>Info</TableHead>
+            {showReceiptStatus && <TableHead>Payment</TableHead>}
             {showReceiptStatus && <TableHead>Transaction</TableHead>}
             <TableHead className="text-right">Action</TableHead>
           </TableRow>
@@ -195,17 +211,55 @@ const SellerInfoTab = () => {
                     )}
                   </TableCell>
                   {showReceiptStatus && (
-                    <TableCell>
-                      {product.receipt ? (
-                        <Badge
-                          variant={product.receipt.status === "FINISHED" ? "default" : product.receipt.status === "PENDING" ? "secondary" : "destructive"}
-                        >
-                          {product.receipt.status.charAt(0) + product.receipt.status.slice(1).toLowerCase()}
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary">No Transaction</Badge>
-                      )}
-                    </TableCell>
+                    <>
+                      <TableCell>
+                        {product.receipt ?
+                          product.receipt.paid_by_buyer ? (
+                              <div className="flex justify-center" title="Buyer have paid">
+                                  <Banknote className="w-5 h-5 text-green-600" />
+                              </div>
+                          ) : (
+                              <div className="flex justify-center" title="Payment Pending">
+                                  <Banknote className="w-5 h-5 text-gray-300" />
+                              </div>
+                          )
+                         : (
+                          <Badge variant="secondary">No Transaction</Badge>
+                        )}
+                      </TableCell>
+                    </>
+                  )}
+                  {showReceiptStatus && (
+                    <>
+                      
+                      <TableCell>
+                        {product.receipt ? product.receipt.confirmed_by_buyer ? (
+                              <div className="flex justify-center" title="Buyer have received item">
+                                <Truck className="w-5 h-5 text-green-600" />
+                            </div>
+                        ) : (
+                            <div className="flex justify-center" title="Waiting for seller confirmation">
+                                <Truck className="w-5 h-5 text-gray-300" />
+                            </div>
+                        ) : (
+                          <Badge variant="secondary">No Transaction</Badge>
+                        )}
+                      </TableCell>
+                    </>
+                    
+                  )}
+                  {showReceiptStatus && (
+                    <>
+                      
+                      <TableCell>
+                        {product.receipt ? (
+                          getStatusBadge(product.receipt.status)
+                        ) : (
+                          <Badge variant="secondary">No Transaction</Badge>
+                        )}
+                      </TableCell>
+                    </>
+                    
                   )}
                   <TableCell className="text-right space-x-2">
                     <div className="inline-block mr-2 px-2 py-1 bg-gray-100 text-xs font-medium rounded-md">

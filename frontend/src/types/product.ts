@@ -42,9 +42,22 @@ export interface Receipt{
   seller_id: number;
   amount: string;
   created_at: string;
+  paid_by_buyer: boolean;
   confirmed_by_buyer: boolean;
   confirmed_by_seller: boolean;
   status: 'PENDING' | 'FINISHED' | 'CANCELED';
+  product?:{
+    product_id: number;
+    name: string;
+  }
+  seller?:{
+    user_id: number;
+    full_name: string;
+  }
+  buyer?:{
+    user_id: number;
+    full_name: string;
+  }
 }
 export interface Product {
   product_id: number;

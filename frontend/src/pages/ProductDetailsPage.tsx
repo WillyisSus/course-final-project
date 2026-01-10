@@ -37,7 +37,7 @@ import {
 import type { Product, ProductComment } from "@/types/product";
 import type { Bid, CreateBid, AutoBid } from "@/types/bid";
 import { useAppSelector } from "@/store/hooks";
-import { z, type ZodError } from "zod";
+import { set, z, type ZodError } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 const blockSchema = z.object({
@@ -275,7 +275,10 @@ const ProductDetailPage = () => {
   // --- HANDLERS ---
   const handlePlaceBid = async (amount: number) => {
     try {
-      if (currentAutoBid) {
+      if (product.price_buy_now && amount >= Number(product.price_buy_now)) {
+        setIsBuyNowModalOpen(true);
+      }
+      else if (currentAutoBid) {
         const payload: CreateBid = { max_price: amount * 1000 };
         await api.put(`/auto-bids/${currentAutoBid.auto_bid_id}`, payload);
         toast.success("Bid updated successfully!");

@@ -12,7 +12,6 @@ import ProductDetailPage from './pages/ProductDetailsPage'
 import { Toaster } from './components/ui/sonner'
 import PersonalProfilePage from './pages/PersonalProfilePage'
 import UploadProductPage from './pages/UploadProductPage'
-import UserProfileTab from './components/UserProfileTab'
 import SellerInfoTab from './components/SellerInfoTab'
 import AutoBidHistoryTab from './components/AutoBidHistoryTab'
 import ForbiddenPage from './pages/ForbiddenPage'
@@ -20,6 +19,7 @@ import CheckoutPage from './pages/CheckoutPage'
 import BlockedBidderTab from './components/BlockedBidderTab'
 import BlockedByProductTab from './components/BlockedByProductTab'
 import FavoriteProductTab from './components/FavoriteProductTab'
+import ProductTransactionTab from './components/ProductTransactionTab'
 const router = createBrowserRouter([
   {
     path:"",
@@ -59,6 +59,9 @@ const router = createBrowserRouter([
           }, {
             path: "favorites",
             Component: FavoriteProductTab
+          },{
+            path: "transactions",
+            Component: ProductTransactionTab
           }
         ]
       }, {
