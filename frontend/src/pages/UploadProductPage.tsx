@@ -7,7 +7,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import api from "@/lib/axios";
 import { toast } from "sonner";
 import { UploadCloud, X, DollarSign, Calendar, Loader2 } from "lucide-react";
-
+import ReactQuill from "react-quill-new";
+import "react-quill-new/dist/quill.snow.css";
 // Shadcn UI Components
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -131,7 +132,11 @@ const UploadProductPage = () => {
       // Append all text fields
       Object.entries(values).forEach(([key, value]) => {
         if (value !== undefined && value !== null && value !== "") {
-          if (key === "price_buy_now" || key === "price_start" || key === "price_step") {
+          if (
+            key === "price_buy_now" ||
+            key === "price_start" ||
+            key === "price_step"
+          ) {
             value = Number(value) * 1000; // Convert to smallest currency unit
           }
           console.log("Appending to formData:", key, value);
@@ -282,7 +287,9 @@ const UploadProductPage = () => {
           <Card>
             <CardHeader>
               <CardTitle>Pricing & Strategy</CardTitle>
-              <CardDescription>All value is of unit {Number(1000).toLocaleString()}₫</CardDescription>
+              <CardDescription>
+                All value is of unit {Number(1000).toLocaleString()}₫
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -294,7 +301,9 @@ const UploadProductPage = () => {
                       <FormLabel>Starting Price</FormLabel>
                       <FormControl>
                         <div className="relative">
-                          <span className="absolute left-3 top-1  text-muted-foreground text-lg" >₫</span>
+                          <span className="absolute left-3 top-1  text-muted-foreground text-lg">
+                            ₫
+                          </span>
                           <Input
                             type="number"
                             className="pl-9"
@@ -321,7 +330,9 @@ const UploadProductPage = () => {
                       <FormLabel>Step Price</FormLabel>
                       <FormControl>
                         <div className="relative">
-                          <span className="absolute left-3 top-1  text-muted-foreground text-lg" >₫</span>
+                          <span className="absolute left-3 top-1  text-muted-foreground text-lg">
+                            ₫
+                          </span>
                           <Input
                             type="number"
                             className="pl-9"
@@ -349,7 +360,9 @@ const UploadProductPage = () => {
                       <FormLabel>Buy Now (Optional)</FormLabel>
                       <FormControl>
                         <div className="relative">
-                          <span className="absolute left-3 top-1  text-muted-foreground text-lg" >₫</span>
+                          <span className="absolute left-3 top-1  text-muted-foreground text-lg">
+                            ₫
+                          </span>
                           <Input
                             type="number"
                             className="pl-9"
@@ -421,24 +434,31 @@ const UploadProductPage = () => {
             <CardHeader>
               <CardTitle>Description & Media</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-12">
               <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        className="min-h-[120px]"
-                        placeholder="Detailed description..."
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        {/* 1. bg-white: Ensures the editor stands out against any page background.
+                          2. [&_.ql-editor]:min-h-[200px]: Forces the writing area to be at least 200px tall.
+                          3. [&_.ql-container]:mb-4: Adds space below the editor so the error message doesn't overlap.
+                        */}
+                        <div className="bg-white">
+                          <ReactQuill
+                            theme="snow"
+                            value={field.value}
+                            onChange={field.onChange}
+                            className="[&_.ql-editor]:min-h-[200px] [&_.ql-container]:mb-2" 
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
               <div className="space-y-3">
                 <FormLabel>Product Images (Max 4)</FormLabel>

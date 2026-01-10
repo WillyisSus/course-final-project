@@ -108,7 +108,7 @@ export const createProductSchema = z
     end_date: z.coerce.date(),
     is_auto_extend: z.coerce.boolean().optional().default(false),
     description: z.string().min(10, "Description too short"),
-    allow_first_time_bidder: z.boolean().optional(),
+    allow_first_time_bidder: z.coerce.boolean().optional(),
     // description/images are often handled in separate endpoints or separate fields in a multipart form
   })
   .refine(

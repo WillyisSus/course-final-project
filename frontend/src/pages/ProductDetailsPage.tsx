@@ -61,6 +61,7 @@ import { z, type ZodError } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import type { Category } from "@/types/product";
+import DOMPurify from "dompurify";
 const blockSchema = z.object({
   reason: z
     .string()
@@ -904,25 +905,40 @@ const ProductDetailPage = () => {
         <h2 className="text-2xl font-bold border-b pb-4 text-gray-900">
           Description
         </h2>
-        <div className="bg-grey-200 border border-gray-200 w-full h-[80%] scroll-y-auto p-4 rounded-md">
+
+        {/* Changed h-[80%] to min-h-[200px] to ensure it doesn't collapse if content is short */}
+        <div className="bg-gray-50 border border-gray-200 w-full min-h-[200px] max-h-[500px] overflow-y-auto p-4 rounded-md">
           {product.product_descriptions?.length > 0 ? (
             product.product_descriptions?.map((desc, index) => (
-              <p
+              <div
                 key={index}
-                className="flex-col flex gap-2 text-gray-700 mb-4 whitespace-pre-line"
+                // Changed from <p> to <div> to support nested block elements
+                className="flex flex-col gap-2 mb-6 border-b border-gray-200 pb-4 last:border-0 last:pb-0 last:mb-0"
               >
                 {desc.created_at && (
-                  <span className="font-light text-sm text-gray-500">
+                  <span className="font-light text-xs text-gray-400 uppercase tracking-wide">
                     {new Date(desc.created_at).toLocaleString()}
                   </span>
                 )}
-                <span className="font-medium">{desc.content}</span>
-              </p>
+
+                {/* 1. prose/prose-sm: Tailwind Typography classes to automatically style h1, ul, ol, bold, etc.
+             2. dangerouslySetInnerHTML: Renders the actual HTML string
+             3. DOMPurify: Prevents XSS attacks
+          */}
+                <div
+                  className="prose prose-sm max-w-none text-gray-800 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
+                  dangerouslySetInnerHTML={{
+                    __html: DOMPurify.sanitize(desc.content),
+                  }}
+                />
+              </div>
             ))
           ) : (
-            <div className="flex flex-col items-center justify-center py-8 text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-              <TextQuoteIcon className="w-8 h-8 mb-2 opacity-50" />
-              <p className="italic">The seller forgot to add some detail...</p>
+            <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+              <TextQuoteIcon className="w-10 h-10 mb-2 opacity-20" />
+              <p className="italic text-sm">
+                The seller hasn't added a description yet.
+              </p>
             </div>
           )}
         </div>
