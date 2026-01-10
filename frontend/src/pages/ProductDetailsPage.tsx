@@ -62,6 +62,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import type { Category } from "@/types/product";
 import DOMPurify from "dompurify";
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
+import { Controller } from "react-hook-form"; // Import this
 const blockSchema = z.object({
   reason: z
     .string()
@@ -1131,11 +1134,30 @@ const ProductDetailPage = () => {
             className="space-y-4"
           >
             <div className="space-y-2">
-              <textarea
-                {...descForm.register("content")}
-                className="flex min-h-[150px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-blue-600"
-                placeholder="Write your update here..."
+              {/* REPLACED textarea with Controller + ReactQuill */}
+              <Controller
+                name="content"
+                control={descForm.control}
+                render={({ field }) => (
+                  <div className="bg-white">
+                    <ReactQuill
+                      theme="snow"
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="Write your update here..."
+                      className="[&_.ql-editor]:min-h-[150px] [&_.ql-container]:mb-2"
+                      modules={{
+                        toolbar: [
+                          ["bold", "italic", "underline", "strike"],
+                          [{ list: "ordered" }, { list: "bullet" }],
+                          ["clean"],
+                        ],
+                      }}
+                    />
+                  </div>
+                )}
               />
+
               {descForm.formState.errors.content && (
                 <p className="text-xs text-red-500 font-medium flex items-center gap-1">
                   <AlertTriangle className="w-3 h-3" />{" "}
