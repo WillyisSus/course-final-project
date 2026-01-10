@@ -26,14 +26,20 @@ export const UserService = {
   },
 
   // fetching a user profile by ID, but stripping out sensitive auth data
-  async findUserById(userId) {
-    console.log("Finding user by ID:", userId);
-    const user = await models.users.findOne({
+  async findUserById(userId, withPassword = false) {
+    const options = {
       where: { user_id: userId },
-      attributes: { 
-        exclude: ['password_hash', 'refresh_token'] // keeping secrets secret
+      attributes: {
+        exclude: ['refresh_token', 'otp_code'] // always exclude these
       }
-    });
+    };
+    
+    if (!withPassword) {
+      options.attributes.exclude.push('password_hash');
+    }
+    console.log("Options", options);
+    console.log("Finding user by ID:", userId);
+    const user = await models.users.findOne(options);
 
     if (!user) {
       throw new Error('User not found');

@@ -46,6 +46,8 @@ const authController = {
                     user_id: user.user_id, 
                     role: user.role, 
                     email: user.email, 
+                    address: user.address,
+                    dob: user.dob,
                     full_name: user.full_name, 
                     is_verified: user.is_verified,
                     positive_rating: user.positive_rating,
@@ -241,6 +243,49 @@ const authController = {
         res.status(500).json({ message: error.message });
         }
     },
+    changePassword: async (req, res) => {
+        try {
+            const userId = req.user.user_id;
+            const { old_password, new_password } = req.body;
+            const user = await UserService.findUserById(userId, true);
+            if (!user) return res.status(404).json({ message: "User not found" });
+            const validPassword = await bcryptjs.compare(old_password, user.password_hash);
+            if (!validPassword) {
+                return res.status(400).json({ message: "Old password is incorrect" });
+            }
+            const hashedNewPassword = await bcryptjs.hash(new_password, 10);
+            await UserService.updateUser(userId, { password_hash: hashedNewPassword });
+            res.json({ message: "Password changed successfully" });
+        }
+        catch (error) {
+            res.status(500).json({ message: error.message });
+        }
+    },
+    forgotPassword: async (req, res) => {
+        try {
+            const { email, new_password } = req.body;
+            const user = await UserService.findUserByEmail(email, true);
+            if (!user) return res.status(404).json({ message: "User not found" });
+            const hashedNewPassword = await bcryptjs.hash(new_password, 10);
+            await UserService.updateUser(user.user_id, { password_hash: hashedNewPassword });
+            res.json({ message: "Password reset successfully" });
+        }
+        catch (error) {
+            res.status(500).json({ message: error.message });
+        }
+    },
+    updateAccount: async (req, res) => {
+        try {
+            const userId = req.user.user_id;
+            const updateData = req.body;
+            await UserService.updateUser(userId, updateData);
+            res.json({ message: "Account updated successfully" });
+        }
+        catch (error) {
+            res.status(500).json({ message: error.message });
+        }
+    },
+
 }
 
 export default authController;

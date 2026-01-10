@@ -12,8 +12,8 @@ const userController = {
     getOne: async (req, res) => {
         try {
             // Insert new code here
-            const user = await UserService.findUserById(req.params.id);
-            res.json({ message: `Get user with id ${req.params.id}`, data: user});
+            const user = await UserService.findUserById(req.user.user_id);
+            res.json({ message: `Get user with id ${req.user.user_id}`, data: user});
         } catch (error) {
             res.status(500).json({ message: "Internal Server Error" });
         }
@@ -28,7 +28,7 @@ const userController = {
     },
     putOne: async (req, res) => {
         try {
-            // Insert new code here
+            
             res.json({ message: `User with id ${req.params.id} updated` });
         } catch (error) {
             res.status(500).json({ message: "Internal Server Error" });

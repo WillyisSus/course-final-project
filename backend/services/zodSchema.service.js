@@ -13,7 +13,12 @@ const decimalSchema = z.coerce.number().positive();  // For prices
 export const registerUserSchema = z.object({
   email: z.email(), //
   // In DB it is password_hash, but input is raw password
-  password: z.string().min(6, "Password must be at least 6 characters"), 
+  password: z.string()
+  .min(8, { message: "Password must be at least 8 characters long" })
+  .regex(/[A-Z]/, { message: "Password must contain at least one uppercase letter" })
+  .regex(/[a-z]/, { message: "Password must contain at least one lowercase letter" })
+  .regex(/[0-9]/, { message: "Password must contain at least one number" })
+  .regex(/[^a-zA-Z0-9]/, { message: "Password must contain at least one special character" }),
   full_name: z.string().min(2).max(100), //
   address: z.string().optional(),
   dob: z.coerce.date().optional(), // Coerce handles string "2000-01-01" -> Date
@@ -21,12 +26,22 @@ export const registerUserSchema = z.object({
 });
 
 export const updateUserSchema = z.object({
-  full_name: z.string().min(2).max(100).optional(),
-  address: z.string().optional(),
-  dob: z.coerce.date().optional(),
-  // Note: changing email usually requires a specific flow (re-verification), so often excluded here
+  address: z.string().min(3, "Username must be at least 3 characters"),
+  full_name: z.string().min(2, "Full name must be at least 2 characters"),
+  email: z.email("Please enter a valid email address"),
+  dob: z.string().refine((val) => !isNaN(Date.parse(val)), {
+      message: "Invalid date format",
+  }),
 });
-
+export const changePasswordSchema = z.object({
+  old_password: z.string().min(8, { message: "Old password must be at least 8 characters long" }),
+  new_password: z.string()
+    .min(8, { message: "New password must be at least 8 characters long" })
+    .regex(/[A-Z]/, { message: "New password must contain at least one uppercase letter" })
+    .regex(/[a-z]/, { message: "New password must contain at least one lowercase letter" }) 
+    .regex(/[0-9]/, { message: "New password must contain at least one number" })
+    .regex(/[^a-zA-Z0-9]/, { message: "New password must contain at least one special character" }),
+});
 export const loginSchema = z.object({
   email: z.email(),
   password: z.string(),
