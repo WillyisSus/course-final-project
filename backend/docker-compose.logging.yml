@@ -1,0 +1,83 @@
+services:
+  # 2. Logstash (The processor)
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.12.0
+    container_name: logstash
+    # Mount the simple logstash config file
+    volumes:
+      - ./config/logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
+    ports:
+      - "5044:5044"
+    environment:
+      ELASTICSEARCH_HOSTS: 'http://elasticsearch:9200'
+    networks:
+      - elk-net
+    depends_on:
+      - elasticsearch
+
+  # 3. Filebeat (The shipper)
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.12.0
+    container_name: filebeat
+    user: root
+    command: filebeat -e -strict.perms=false
+    volumes:
+      # CRITICAL: Mount your local logs folder for reading
+      - ./logs:/var/log/app
+      - ./config/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+    networks:
+      - elk-net
+    depends_on:
+      - logstash
+
+  # 4. Elasticsearch (The storage and search engine)
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      # -----------------------------------
+      # ADD THIS LINE TO FORCE HTTP ON PORT 9200
+      - xpack.security.http.ssl.enabled=false
+      # -----------------------------------
+      - cluster.name=docker-cluster
+      - bootstrap.memory_lock=true
+      # IMPORTANT: Increase memory for dev environment stability
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    networks:
+      - elk-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q '\"status\":\"green\"'"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    # Optional: Persist data across restarts
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+
+  # 5. Kibana (The visualization UI)
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.12.0
+    container_name: kibana
+    ports:
+      - "5601:5601"
+    environment:
+      ELASTICSEARCH_HOSTS: 'http://elasticsearch:9200'
+    volumes:
+      - ./config/kibana/kibana.yml:/usr/share/kibana/config/kibana.yml:ro
+    networks:
+      - elk-net
+    depends_on:
+      - elasticsearch
+
+# Define the network and persistent volume
+networks:
+  elk-net:
+    driver: bridge
+
+volumes:
+  esdata:
+    driver: local

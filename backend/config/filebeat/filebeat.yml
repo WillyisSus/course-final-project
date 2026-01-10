@@ -1,0 +1,20 @@
+# 1. Input Definition (Harvester)
+filebeat.inputs:
+  - type: filestream
+    enabled: true
+    paths:
+      # This is the guaranteed accessible path inside the container
+      - /var/log/app/*.gz
+
+    # IMPORTANT: Use the JSON processor for your Winston logs
+    json.keys_under_root: true
+    json.overwrite_keys: true
+    json.add_error_key: true
+
+# 2. Output Configuration
+output.logstash:
+  hosts: ["logstash:5044"]
+
+# 3. Logging for Debugging
+logging.level: debug
+logging.selectors: [ "publish", "logstash", "input" ]
