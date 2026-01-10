@@ -187,10 +187,20 @@ const Navbar = () => {
                     <ChevronDown className="w-3 h-3 text-gray-400" />
                   </Button>
                 </DropdownMenuTrigger>
-
+                
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuLabel>My Account</DropdownMenuLabel>
                   <DropdownMenuSeparator />
+                  {user.role === "ADMIN" && (
+                    <>
+                      <DropdownMenuItem asChild className="cursor-pointer gap-2 text-blue-500 font-bold hover:bg-blue-50">
+                        <Link to={"admin"}>
+                          <LayoutDashboard className="w-4 h-4" /> Admin Panel
+                        </Link>
+                      </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    </>
+                  )}
                   <DropdownMenuItem asChild className="cursor-pointer gap-2">
                     <Link to={"/profile"}>
                       <User className="w-4 h-4" /> Profile

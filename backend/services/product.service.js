@@ -4,7 +4,7 @@ import { sequelize } from '../utils/db.js'; //
 export const ProductService = {
 
   // I'll fetch active products that haven't expired yet for the main list
-  async   findAllProducts({ 
+  async  findAllProducts({ 
     limit = 10, 
     offset = 0, 
     searchQuery = null, 
@@ -52,7 +52,7 @@ export const ProductService = {
       limit,
       offset,
       attributes: [
-        'product_id', 'name', 'price_current', 'price_buy_now', 
+        'product_id', 'name', 'price_current', 'price_buy_now', 'price_start', 
         'end_date', 'start_date', 'created_at', 'winner_id', 'status', 'allow_first_time_bidder',  // Added status to return attributes
         [
           sequelize.literal(`(
@@ -191,9 +191,9 @@ export const ProductService = {
   // deleting a product, strictly checking ownership and bid status
   async deleteProduct(productId, sellerId) {
       const product = await models.products.findByPk(productId);
-
+      const user = await models.users.findByPk(sellerId);
       if (!product) throw new Error('Product not found');
-      if (product.seller_id !== sellerId) {
+      if (user.role != 'ADMIN' && product.seller_id !== sellerId) {
       throw new Error('Unauthorized: I can only delete my own products');
       }
 

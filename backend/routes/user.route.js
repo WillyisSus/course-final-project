@@ -4,8 +4,9 @@ import authController from "../controllers/auth.controller.js";
 
 const userRouter = Router();
 
-userRouter.get('/', userController.getAll);
+userRouter.get('/', authController.checkAuth, authController.checkPermission(['ADMIN']), userController.getAll);
 userRouter.get('/account', authController.checkAuth, userController.getOne);
+userRouter.get('/:id', userController.findOneById);
 userRouter.post('/', authController.checkAuth, authController.checkPermission(["ADMIN"]), userController.postOne);
 userRouter.put('/:id', authController.checkAuth, authController.checkPermission(["ADMIN"]), userController.putOne);
 userRouter.delete('/:id', authController.checkAuth, authController.checkPermission(["ADMIN"]), userController.deleteOne);

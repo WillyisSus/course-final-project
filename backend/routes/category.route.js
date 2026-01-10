@@ -1,9 +1,12 @@
 import { Router } from "express";
 import categoryController from "../controllers/category.controller.js";
+import authController from "../controllers/auth.controller.js";
+import { validate } from "../utils/validator.js";
+import { createCategorySchema } from "../services/zodSchema.service.js";
 const categoryRouter = Router();
 categoryRouter.get('/', categoryController.getAll);
 categoryRouter.get('/:id', categoryController.getOne);
-categoryRouter.post('/',  categoryController.postOne);
-categoryRouter.put('/:id', categoryController.putOne);
-categoryRouter.delete('/:id', categoryController.deleteOne);
+categoryRouter.post('/', authController.checkAuth, authController.checkPermission(['ADMIN']), validate(createCategorySchema), categoryController.postOne);
+categoryRouter.put('/:id', authController.checkAuth, authController.checkPermission(['ADMIN']), validate(createCategorySchema) ,categoryController.putOne);
+categoryRouter.delete('/:id', authController.checkAuth, authController.checkPermission(['ADMIN']),categoryController.deleteOne);
 export default categoryRouter;

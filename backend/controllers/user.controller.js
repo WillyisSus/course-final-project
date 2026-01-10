@@ -18,6 +18,14 @@ const userController = {
             res.status(500).json({ message: "Internal Server Error" });
         }
     },
+    findOneById: async (req, res) => {
+        try {
+            const user = await UserService.findUserById(req.params.id);
+            res.json({ message: `Get user with id ${req.params.id}`, data: user});
+        } catch (error) {
+            res.status(500).json({ message: "Internal Server Error" });
+        }
+    },
     postOne: async (req, res) => {
         try {
             // Insert new code here

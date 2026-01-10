@@ -3,14 +3,18 @@ import models from '../utils/db.js'; //
 export const UpgradeRequestService = {
 
   // Admin view: See all pending requests
-  async findAllUpgradeRequests(statusFilter = 'PENDING') {
+  async findAllUpgradeRequests(statusFilter) {
+    const whereClause = {};
+    if (statusFilter && statusFilter !== "*" && statusFilter !== "ALL") {
+        whereClause.status = statusFilter;
+    }
     return await models.upgrade_requests.findAll({
-      where: { status: statusFilter }, //
+      where: whereClause, //
       include: [
         {
           model: models.users,
           as: 'user', //
-          attributes: ['user_id', 'full_name', 'email', 'positive_rating']
+          attributes: ['user_id', 'full_name', 'positive_rating', 'negative_rating']
         }
       ],
       order: [['request_id', 'ASC']]

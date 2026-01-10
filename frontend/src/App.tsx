@@ -21,6 +21,10 @@ import BlockedByProductTab from './components/BlockedByProductTab'
 import FavoriteProductTab from './components/FavoriteProductTab'
 import ProductTransactionTab from './components/ProductTransactionTab'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
+import AdminLayout from './layouts/AdminLayout'
+import AdminCategoriesPage from './components/admin/AdminCategoriesPage'
+import AdminUsersPage from './components/admin/AdminUsersPage'
+import AdminProductsPage from './components/admin/AdminProductPage'
 const router = createBrowserRouter([
   {
     path:"",
@@ -93,6 +97,21 @@ const router = createBrowserRouter([
   }, {
     path: "checkout/:productId",
     Component: CheckoutPage
+  }, {
+    path: "admin",
+    element: <AdminLayout/>,
+    children:[
+      {
+        path: 'categories',
+        Component: AdminCategoriesPage
+      },{
+        path: 'users',
+        Component: AdminUsersPage
+      }, {
+        path: 'products',
+        Component: AdminProductsPage
+      }
+    ]
   }
 
 ])

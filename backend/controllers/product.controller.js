@@ -44,7 +44,39 @@ const productController = {
             res.status(500).json({ message: error.message || "Internal Server Error" });
         }
     },
-    
+    getAllForAdmin: async (req, res) => {
+        try {
+            const limit = parseInt(req.query.limit) || null;
+            const page = parseInt(req.query.page) || null;
+            const offset = limit && page ? (page - 1) * limit: 0;
+            const filters = {
+                searchQuery: req.query.search || null,
+                sortBy: req.query.sort || 'end_date',
+                sortOrder: req.query.order || 'ASC',
+                category: req.query.category || null,
+                status: req.query.status || null,
+                sellerId: req.query.seller_id || null
+            };
+            const { count, rows } = await ProductService.findAllProducts({
+                limit,
+                offset,
+                ...filters
+            });
+            res.json({
+                message: "Products retrieved successfully",
+                data: rows,
+                meta: {
+                    total: count,
+                    page: page,
+                    limit: limit,
+                    totalPages: Math.ceil(count / limit)
+                }
+        });
+        } catch (error) {
+            console.error("Error in getAllForAdmin:", error);
+            res.status(500).json({ message: error.message || "Internal Server Error" });
+        }
+    },
     // GET /api/products/:id
     getOne: async (req, res) => {
         try {

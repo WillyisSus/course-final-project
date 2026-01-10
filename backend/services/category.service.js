@@ -32,6 +32,20 @@ export const CategoryService = {
   },
 
   async createCategory(name, parentId = null) {
+    const parentCategory = parentId ? await models.categories.findByPk(parentId) : null;
+    if (parentId && !parentCategory) {
+      throw new Error('Parent category not found');
+    }
+    if (parentId && parentCategory){
+      if (parentCategory.parent_id){
+        throw new Error('Cannot create sub-category under a sub-category (only 2 levels allowed).');
+      }
+      const countProducts = await models.products.count({ where: { category_id: parentId } });
+      if (countProducts > 0){
+        throw new Error('Cannot create sub-category under a category that contains products.');
+      }
+      console.log("Creating category under parent:", parentCategory.name);
+    } 
     return await models.categories.create({
       name,
       parent_id: parentId
@@ -41,7 +55,23 @@ export const CategoryService = {
   async updateCategory(categoryId, updateData) {
     const category = await models.categories.findByPk(categoryId);
     if (!category) throw new Error('Category not found');
-    
+    if (updateData.parent_id && updateData.parent_id !== category.parent_id) {
+      const parentId = updateData.parent_id;
+      const parentCategory = parentId ? await models.categories.findByPk(parentId) : null;
+      if (parentId && !parentCategory) {
+        throw new Error('Parent category not found');
+      }
+      if (parentId && parentCategory){
+        if (parentCategory.parent_id){
+          throw new Error('Cannot create sub-category under a sub-category (only 2 levels allowed).');
+        }
+        const countProducts = await models.products.count({ where: { category_id: parentId } });
+        if (countProducts > 0){
+          throw new Error('Cannot create sub-category under a category that contains products.');
+        }
+        console.log("Creating category under parent:", parentCategory.name);
+      } 
+    }
     return await category.update(updateData);
   },
 

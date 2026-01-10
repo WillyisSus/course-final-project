@@ -5,10 +5,7 @@ const upgradeRequestController = {
     // Admin: View queue of requests
     getAll: async (req, res) => {
         try {
-            // Optional filter: defaults to 'PENDING' if not specified, 
-            // or fetch all if logic allows. Service usually defaults to PENDING.
             const status = req.query.status || 'PENDING';
-            
             const requests = await UpgradeRequestService.findAllUpgradeRequests(status);
             
             res.json({ 
@@ -16,6 +13,7 @@ const upgradeRequestController = {
                 data: requests 
             });
         } catch (error) {
+            console.log(error);
             res.status(500).json({ message: error.message });
         }
     },
