@@ -14,4 +14,5 @@ productRouter.post('/:id/block', authController.checkAuth, validate(createBlockB
 productRouter.post('/:id/description', authController.checkAuth, validate(createProductDescriptionSchema), productController.addDescription);
 productRouter.delete('/:id',authController.checkAuth, productController.deleteOne);
 productRouter.get('/:id/is-blocked', authController.checkAuth, productController.checkBidderBlocked)
+productRouter.get('/admin', authController.checkAuth, authController.checkPermission(["ADMIN"]), productController.getAllForAdmin);
 export default productRouter;

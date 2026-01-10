@@ -157,5 +157,38 @@ export const emailTemplates = {
         <p>If you didn't request a password reset, you can safely ignore this email. Do not share this email at risk of compromising your account</p>
       </div>
     `
+  }),
+
+  // J. New Comment/Question on Product
+  newCommentOnProduct: (sellerName, productName, productId) => ({
+    subject: `New Question on Your Product: ${productName}`,
+    html: `
+      <div style="font-family: sans-serif; padding: 20px;">
+        <h2>New Question on Your Product</h2>
+        <p>Hi ${sellerName},</p>
+        <p>A user has posted a question about your product <b>${productName}</b>.</p>
+        <p>Click the button below to view the question and respond:</p>
+        <a href="http://localhost:5173/products/${productId}" style="background: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0;">View Product & Question</a>
+        <p>Responding quickly to questions can help increase buyer interest and trust!</p>
+      </div>
+    `
+  }),
+
+  // K. Password Reset by Admin
+  resetPasswordByAdmin: (userName, newPassword) => ({
+    subject: "Your BigBiddie Password Has Been Reset",
+    html: `
+      <div style="font-family: sans-serif; padding: 20px;">
+        <h2>Password Reset Notice</h2>
+        <p>Hi ${userName},</p>
+        <p>An administrator has reset your password. Please use the following credentials to log in:</p>
+        <div style="background: #f3f4f6; padding: 15px; border-radius: 5px; margin: 15px 0;">
+          <p style="margin: 5px 0;"><b>New Password:</b> <span style="color: #2563eb; font-family: monospace; font-size: 16px;">${newPassword}</span></p>
+        </div>
+        <p><b>Important:</b> For security reasons, we strongly recommend changing this password after logging in.</p>
+        <a href="http://localhost:5173/login" style="background: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0;">Log In Now</a>
+        <p>If you did not request this change, please contact support immediately.</p>
+      </div>
+    `
   })
 };

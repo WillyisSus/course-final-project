@@ -131,12 +131,16 @@ const userFormSchema = z.object({
 });
 
 const resetPasswordSchema = z.object({
-    new_password: z.string().min(6, "Password must be at least 6 characters"),
+    new_password:  z.string()
+  .min(8, { message: "Password must be at least 8 characters long" })
+  .regex(/[A-Z]/, { message: "Password must contain at least one uppercase letter" })
+  .regex(/[a-z]/, { message: "Password must contain at least one lowercase letter" })
+  .regex(/[0-9]/, { message: "Password must contain at least one number" })
+  .regex(/[^a-zA-Z0-9]/, { message: "Password must contain at least one special character" }),
 });
 
 type UserFormValues = z.infer<typeof userFormSchema>;
 type ResetPasswordValues = z.infer<typeof resetPasswordSchema>;
-
 
 const AdminUsersPage = () => {
     const [requests, setRequests] = useState<UpgradeRequest[]>([]);
@@ -270,34 +274,6 @@ const AdminUsersPage = () => {
         }
     };
 
-    // Open User Modal Logic
-    const openCreateUserModal = () => {
-        setEditingUser(null);
-        userForm.reset({
-            role: "BIDDER",
-            email: "",
-            full_name: "",
-            address: "",
-            dob: "",
-            password: ""
-        });
-        setIsUserModalOpen(true);
-    };
-
-    const openEditUserModal = (user: User) => {
-        setEditingUser(user);
-        userForm.reset({
-            role: user.role,
-            email: user.email,
-            full_name: user.full_name,
-            address: user.address || "",
-            dob: user.dob ? new Date(user.dob).toISOString().split('T')[0] : "",
-            password: "" // Password usually empty on edit
-        });
-        setIsUserModalOpen(true);
-    };
-
-
     // --- FILTER USERS ---
     const filteredUsers = users.filter(u => 
         u.full_name.toLowerCase().includes(userSearch.toLowerCase()) || 
@@ -427,9 +403,6 @@ const AdminUsersPage = () => {
                                     onChange={(e) => setUserSearch(e.target.value)}
                                 />
                             </div>
-                            <Button className="gap-2" onClick={openCreateUserModal}>
-                                <Plus className="w-4 h-4" /> Add User
-                            </Button>
                         </div>
                     </div>
                 </CardHeader>
@@ -493,9 +466,6 @@ const AdminUsersPage = () => {
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end">
                                                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                        <DropdownMenuItem onClick={() => openEditUserModal(user)}>
-                                                            <UserCog className="mr-2 w-4 h-4" /> Edit Details
-                                                        </DropdownMenuItem>
                                                         <DropdownMenuItem onClick={() => { setPasswordResetUser(user); setIsResetPassModalOpen(true); }}>
                                                             <KeyRound className="mr-2 w-4 h-4" /> Reset Password
                                                         </DropdownMenuItem>

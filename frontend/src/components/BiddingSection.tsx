@@ -9,7 +9,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import type { AutoBid, Bid } from "@/types/bid";
@@ -23,6 +29,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Link } from "react-router";
 
 interface BiddingSectionProps {
   startPrice: number;
@@ -151,7 +158,11 @@ const BiddingSection = ({
           {/* ... (Keep Form JSX unchanged) ... */}
           <CardHeader className="pb-2">
             <CardTitle>Place Your Maximum Bid</CardTitle>
-            <CardDescription>If you want to place a maximum price at lease <span className="font-medium text-blue-600">Buy Now Price</span>, you can win this product at that price.</CardDescription>
+            <CardDescription>
+              If you want to place a maximum price at lease{" "}
+              <span className="font-medium text-blue-600">Buy Now Price</span>,
+              you can win this product at that price.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <form
@@ -200,7 +211,7 @@ const BiddingSection = ({
                 <TableHead>Time</TableHead>
                 <TableHead className="text-right">Amount</TableHead>
                 {isOwner && (
-                  <TableHead className="text-right w-[80px]">Action</TableHead>
+                  <TableHead className="text-right w-20">Action</TableHead>
                 )}
               </TableRow>
             </TableHeader>
@@ -217,13 +228,53 @@ const BiddingSection = ({
               ) : (
                 bidHistory.map((bid) => (
                   <TableRow key={bid.bid_id}>
-                    <TableCell className="font-medium flex items-center gap-2">
-                      <Avatar className="h-6 w-6">
-                        <AvatarFallback className="text-[10px] bg-blue-100 text-blue-600 font-bold">
-                          {bid.bidder.full_name?.charAt(0) || "U"}
-                        </AvatarFallback>
-                      </Avatar>
-                      {maskName(bid.bidder.full_name || "Unknown User")}
+                    <TableCell className="font-medium">
+                      {isOwner ? (
+                        /* OWNER VIEW: Clickable Link + Rating Badge, but Name is STILL MASKED */
+                        <Link
+                          to={`/profile/${bid.bidder.user_id}`}
+                          className="flex items-center gap-2 group"
+                        >
+                          <Avatar className="h-6 w-6">
+                            <AvatarFallback className="text-[10px] bg-blue-100 text-blue-600 font-bold">
+                              {bid.bidder.full_name?.charAt(0) || "U"}
+                            </AvatarFallback>
+                          </Avatar>
+
+                          <span className="group-hover:text-blue-600 group-hover:underline decoration-blue-600 underline-offset-4 transition-colors">
+                            {maskName(bid.bidder.full_name || "Unknown User")}
+                          </span>
+
+                          {(() => {
+                            const pos = Number(bid.bidder.positive_rating || 0);
+                            const neg = Number(bid.bidder.negative_rating || 0);
+                            const total = pos + neg;
+                            const score =
+                              total > 0 ? Math.round((pos / total) * 100) : 0;
+
+                            return (
+                              <Badge
+                                variant="secondary"
+                                className="ml-1 text-[10px] h-5 px-1.5 bg-blue-50 text-blue-700 border border-blue-100 hover:bg-blue-100"
+                              >
+                                {score}%
+                              </Badge>
+                            );
+                          })()}
+                        </Link>
+                      ) : (
+                        /* VISITOR VIEW: Static Text + Masked Name */
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-6 w-6">
+                            <AvatarFallback className="text-[10px] bg-gray-100 text-gray-500 font-bold">
+                              {bid.bidder.full_name?.charAt(0) || "U"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="text-gray-600">
+                            {maskName(bid.bidder.full_name || "Unknown User")}
+                          </span>
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell className="text-gray-500 text-xs">
                       {new Date(bid.time).toLocaleString()}

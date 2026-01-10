@@ -10,7 +10,7 @@ export const FeedbackService = {
         {
           model: models.users,
           as: 'from_user', //
-          attributes: ['full_name']
+          attributes: ['full_name', 'user_id']
         },
         {
           model: models.products,

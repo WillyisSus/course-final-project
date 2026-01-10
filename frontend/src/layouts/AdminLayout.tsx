@@ -15,8 +15,6 @@ import { toast } from "sonner";
 
 const AdminLayout = () => {
     const { user } = useAppSelector((state) => state.auth);
-    const dispatch = useAppDispatch();
-    const navigate = useNavigate();
     if (!user) {
         toast.error("Please log in to access the admin panel.");
         return Navigate({ to: "/login" });

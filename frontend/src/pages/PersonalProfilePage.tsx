@@ -50,6 +50,9 @@ const PersonalProfilePage = () => {
       case "transactions":
         navigate("/profile/transactions");
         break;
+      case "feedbacks":
+        navigate("/profile/feedbacks");
+        break;
       default:
         navigate("/profile");
     }
@@ -86,6 +89,7 @@ const PersonalProfilePage = () => {
           <TabsTrigger value="blocked-products">Blocked by</TabsTrigger>
           <TabsTrigger value="favorites">Favorites</TabsTrigger>
           <TabsTrigger value="transactions">Transactions</TabsTrigger>
+          <TabsTrigger value="feedbacks">Feedbacks</TabsTrigger>
         </TabsList>
       </Tabs>
 

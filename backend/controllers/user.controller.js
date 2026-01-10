@@ -1,5 +1,6 @@
 import { UserService } from "../services/user.service.js";
-
+import { emailTemplates, sendEmail } from "../utils/email.js";
+import bcrypt from "bcryptjs";
 const userController = {
     getAll: async (req, res) => {
         try {
@@ -36,9 +37,27 @@ const userController = {
     },
     putOne: async (req, res) => {
         try {
-            
             res.json({ message: `User with id ${req.params.id} updated` });
         } catch (error) {
+            res.status(500).json({ message: "Internal Server Error" });
+        }
+    },
+    resetUserPassword: async (req, res) => {
+        try {
+            const { new_password } = req.body;
+            const hashedPassword = await bcrypt.hash(new_password, 10);
+            
+            const updatedUser =  await UserService.updateUser(req.params.id, { password_hash: hashedPassword });
+            if (updatedUser) {
+                const email = emailTemplates.resetPasswordByAdmin(
+                    updatedUser.full_name,
+                    new_password,
+                );
+                await sendEmail({to: updatedUser.email, subject: email.subject, html: email.html});
+            }
+            res.json({ message: `Password for user with id ${req.params.id} reset` });
+        } catch (error) {
+            console.log(error);
             res.status(500).json({ message: "Internal Server Error" });
         }
     },

@@ -5,7 +5,7 @@ export interface Bid {
   amount: string;
   status: string;
   time: string;
-  bidder: { user_id: number; full_name: string; positive_rating: number };
+  bidder: { user_id: number; full_name: string; positive_rating: number, negative_rating: number;};
 }
 
 export interface CreateBid {

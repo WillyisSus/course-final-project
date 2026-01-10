@@ -3,44 +3,27 @@ import { Op } from 'sequelize';
 
 export const BidService = {
 
-  // The core function: placing a new bid
   async createBid(bidData) {
     const { product_id, bidder_id, amount } = bidData;
 
-    // 1. Validation: Ensure product exists and is active
     const product = await models.products.findByPk(product_id);
     if (!product) throw new Error('Product not found');
     if (product.status !== 'ACTIVE') throw new Error('Bidding is closed for this product'); //
     if (new Date() > product.end_date) throw new Error('Auction has ended');
 
-    // 2. Validation: Prevent self-bidding
     if (product.seller_id === bidder_id) throw new Error('Sellers cannot bid on their own products');
 
-    // 3. Validation: Check if user is blocked
     const blocked = await models.blocked_bidders.findOne({
       where: { product_id, user_id: bidder_id } //
     });
     if (blocked) throw new Error('You are blocked from bidding on this product');
 
-    // 4. Validation: Price Rules
     const currentPrice = parseFloat(product.price_current);
     const step = parseFloat(product.price_step);
-    
-    // If no bids yet, bid must be >= start_price. Otherwise, >= current_price + step
-    // const bidCount = await models.bids.count({ where: { product_id } });
-    
-    // Logic: First bid must meet start price; subsequent bids must exceed current + step
-    // if (bidCount === 0) {
-        if (amount < currentPrice) throw new Error(`Bid must be greater than current price: ${currentPrice}`);
-    // } else {
-    //     if (amount < currentPrice + step) throw new Error(`Bid must be at least ${currentPrice + step}`);
-    // }
-
-    // 5. Transaction: Execute the bid safely
-    // I am using a managed transaction to ensure all updates happen or none do
+    if (amount < currentPrice) throw new Error(`Bid must be greater than current price: ${currentPrice}`);
+  
     return await sequelize.transaction(async (t) => {
       
-      // A. Create the new bid log
       const newBid = await models.bids.create({
         product_id,
         bidder_id,
@@ -49,14 +32,12 @@ export const BidService = {
         time: new Date()
       }, { transaction: t });
 
-      // B. Prepare product updates
       const updateData = {
         price_current: amount,
         winner_id: bidder_id
       };
 
-      // C. Anti-Sniping Logic: Extend auction if bid is near the end
-      // e.g., if within last 5 minutes, extend by 10 minutes
+
       if (product.is_auto_extend) { //
         const now = new Date();
         const timeRemaining = new Date(product.end_date) - now;

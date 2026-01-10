@@ -173,7 +173,7 @@ export const AutoBidService = {
         {
           model: models.users,
           as: 'bidder', //
-          attributes: ['user_id', 'full_name', 'positive_rating'] // minimal user info
+          attributes: ['user_id', 'full_name', 'positive_rating', 'negative_rating'] // minimal user info
         }
       ],
       order: [['max_price', 'DESC']] // Highest max willingness at the top

@@ -26,6 +26,7 @@ import productReceiptRouter from './routes/productReceipts.route.js';
 import blockedBiddersRouter from './routes/blockedBidders.route.js';
 import userRouter from './routes/user.route.js';
 import feedbackRoute from './routes/feedback.route.js';
+import rateLimit from 'express-rate-limit'; // <--- 1. Import here  
 const PORT = 3000;
 configDotenv();
 
@@ -84,7 +85,14 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE'], 
   allowedHeaders: ['Content-Type', 'Authorization'] 
 }));
-
+const limiter = rateLimit({
+	windowMs: 15 * 60 * 1000, // 15 minutes
+	max: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
+	standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+	legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+    message: "Too many requests from this IP, please try again after 15 minutes",
+});
+app.use(limiter);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(expressLogger);

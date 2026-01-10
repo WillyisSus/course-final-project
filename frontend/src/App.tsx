@@ -25,6 +25,8 @@ import AdminLayout from './layouts/AdminLayout'
 import AdminCategoriesPage from './components/admin/AdminCategoriesPage'
 import AdminUsersPage from './components/admin/AdminUsersPage'
 import AdminProductsPage from './components/admin/AdminProductPage'
+import UserProfilePage from './pages/UserProfilePage'
+import FeedbackTab from './components/FeedbackTab'
 const router = createBrowserRouter([
   {
     path:"",
@@ -67,8 +69,14 @@ const router = createBrowserRouter([
           },{
             path: "transactions",
             Component: ProductTransactionTab
+          }, {
+            path: "feedbacks",
+            Component: FeedbackTab
           }
         ]
+      }, {
+        path: 'profile/:id',
+        Component: UserProfilePage
       }, {
         path: "upload",
         Component: UploadProductPage
@@ -101,6 +109,10 @@ const router = createBrowserRouter([
     path: "admin",
     element: <AdminLayout/>,
     children:[
+      {
+        index:true,
+        Component: AdminCategoriesPage
+      },
       {
         path: 'categories',
         Component: AdminCategoriesPage

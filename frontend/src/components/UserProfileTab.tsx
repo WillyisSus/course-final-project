@@ -31,6 +31,7 @@ import {
   Calendar,
   Eye,
   EyeOff,
+  ThumbsUp
 } from "lucide-react";
 
 // UI Components
@@ -183,6 +184,15 @@ const UserProfileTab = () => {
     }
   };
 
+  // --- SCORE CALCULATION ---
+  const calculateScore = () => {
+    if (!user) return 0;
+    const pos = Number(user.positive_rating || 0);
+    const neg = Number(user.negative_rating || 0);
+    const total = pos + neg;
+    return total > 0 ? Math.round((pos / total) * 100) : 0;
+  };
+
   if (!user) return <div className="p-10 text-center text-muted-foreground">Please log in to view your profile.</div>;
 
   return (
@@ -201,15 +211,29 @@ const UserProfileTab = () => {
             <CardDescription>{user.email}</CardDescription>
           </CardHeader>
 
-          <CardContent className="flex flex-col items-center gap-6">
-            {/* Verification Badge */}
-            <Badge
-              variant={user.is_verified ? "default" : "destructive"}
-              className="gap-1.5 py-1 px-3"
-            >
-              {user.is_verified ? <CheckCircle className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
-              {user.is_verified ? "Verified Account" : "Unverified"}
-            </Badge>
+          <CardContent className="flex flex-col items-center gap-4">
+            {/* Status Badges Container */}
+            <div className="flex flex-wrap justify-center gap-2 w-full">
+                {/* Verification Badge */}
+                <Badge
+                    variant={user.is_verified ? "default" : "destructive"}
+                    className="gap-1.5 py-1 px-3"
+                >
+                    {user.is_verified ? <CheckCircle className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
+                    {user.is_verified ? "Verified" : "Unverified"}
+                </Badge>
+
+                {/* Positive Score Badge */}
+                <Badge 
+                    variant="secondary" 
+                    className="gap-1.5 py-1 px-3 bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
+                >
+                    <ThumbsUp className="w-3.5 h-3.5" />
+                    {calculateScore()}% Positive
+                </Badge>
+            </div>
+
+            <Separator />
 
             {/* UPGRADE SELLER LOGIC */}
             {user.role === "BIDDER" && (

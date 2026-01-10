@@ -184,13 +184,19 @@ const ProductDetailPage = () => {
       try {
         const res = await api.get(`/products/${id}`);
         setProduct(res.data.data as Product);
-        if (!(res.data.data as Product).allow_first_time_bidder &&  (res.data.data as Product).seller_id !== user?.user_id) {
+        if (
+          !(res.data.data as Product).allow_first_time_bidder &&
+          (res.data.data as Product).seller_id !== user?.user_id
+        ) {
           console.log("First time bidders are not allowed for this product.");
-          const userBids = await api.get('/auto-bids')
-          .then((bidRes) => bidRes.data.data as AutoBid[])
-          .catch(() => []);
+          const userBids = await api
+            .get("/auto-bids")
+            .then((bidRes) => bidRes.data.data as AutoBid[])
+            .catch(() => []);
           if (user && userBids.length === 0) {
-            toast.error("First-time bidders are not allowed to bid on this product. Please place an auto-bid on another product first.");
+            toast.error(
+              "First-time bidders are not allowed to bid on this product. Please place an auto-bid on another product first."
+            );
             navigate("/");
           }
         }
@@ -291,11 +297,13 @@ const ProductDetailPage = () => {
             setIsFavorite(true);
           }
         } catch (error) {
-          if ((error as any).response && (error as any).response.status === 404) {
+          if (
+            (error as any).response &&
+            (error as any).response.status === 404
+          ) {
             setIsFavorite(false);
-          }else{
-          console.error("Failed to check favorite status", error);
-
+          } else {
+            console.error("Failed to check favorite status", error);
           }
         }
       };
@@ -375,7 +383,7 @@ const ProductDetailPage = () => {
     try {
       const payload = {
         ...data,
-        price_buy_now: data.price_buy_now || null, 
+        price_buy_now: data.price_buy_now || null,
       };
 
       await api.put(`/products/${id}`, payload);
@@ -544,9 +552,42 @@ const ProductDetailPage = () => {
                 </span>
                 <span className="flex items-center gap-1">
                   <UserIcon className="w-4 h-4" /> Seller:{" "}
-                  <span className="font-medium text-gray-700">
-                    {product.seller?.full_name}
-                  </span>
+                  {!isOwner ? (
+                    /* VISITOR VIEW: Link to Profile + Rating Badge */
+                    <Link
+                      to={`/profile/${product.seller_id}`}
+                      className="flex items-center gap-2 group font-medium text-gray-700"
+                    >
+                      <span className="group-hover:text-blue-600 group-hover:underline transition-colors">
+                        {product.seller?.full_name}
+                      </span>
+                      {(() => {
+                        const pos = Number(
+                          product.seller?.positive_rating || 0
+                        );
+                        const neg = Number(
+                          product.seller?.negative_rating || 0
+                        );
+                        const total = pos + neg;
+                        const score =
+                          total > 0 ? Math.round((pos / total) * 100) : 0;
+
+                        return (
+                          <Badge
+                            variant="secondary"
+                            className="text-xs h-5 px-1.5 bg-blue-50 text-blue-700 border border-blue-100 hover:bg-blue-100"
+                          >
+                            {score}%
+                          </Badge>
+                        );
+                      })()}
+                    </Link>
+                  ) : (
+                    /* OWNER VIEW: Just Name */
+                    <span className="font-medium text-gray-700">
+                      {product.seller?.full_name} (You)
+                    </span>
+                  )}
                 </span>
               </div>
             </div>
@@ -628,15 +669,51 @@ const ProductDetailPage = () => {
                     ₫{Number(product.price_step).toLocaleString()}
                   </span>
                 </div>
+
+                {/* Updated Highest Bidder Section */}
                 <div className="w-full flex items-center justify-between">
                   <span className="text-sm font-medium text-gray-600">
                     Highest Bidder
                   </span>
-                  <span className="text-xl font-bold text-gray-900">
-                    {product.winner_id
-                      ? product?.winner?.full_name
-                      : "No Winner yet"}
-                  </span>
+                  <div className="text-xl font-bold text-gray-900">
+                    {product.winner_id && product.winner ? (
+                      <Link
+                        to={`/profile/${product.winner_id}`}
+                        className="flex items-center gap-2 group"
+                      >
+                        <span className="group-hover:text-blue-600 group-hover:underline decoration-blue-600 underline-offset-4 transition-colors">
+                          {product.winner.full_name}
+                        </span>
+
+                        {/* Positive Rating Badge */}
+                        {(() => {
+                          // Safely cast to number in case they come as strings
+                          const pos = Number(
+                            product.winner.positive_rating || 0
+                          );
+                          const neg = Number(
+                            product.winner.negative_rating || 0
+                          );
+                          const total = pos + neg;
+                          // Avoid division by zero
+                          const score =
+                            total > 0 ? Math.round((pos / total) * 100) : 0;
+
+                          return (
+                            <Badge
+                              variant="secondary"
+                              className="text-xs h-5 px-1.5 bg-blue-50 text-blue-700 border border-blue-100 hover:bg-blue-100"
+                              title="Positive Score"
+                            >
+                              {score}%
+                            </Badge>
+                          );
+                        })()}
+                      </Link>
+                    ) : (
+                      "No Winner yet"
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -1101,52 +1178,52 @@ const ProductDetailPage = () => {
 
               {/* Category */}
               <FormField
-                  control={editForm.control}
-                  name="category_id"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Category</FormLabel>
-                      <Select
-                        onValueChange={(value) => field.onChange(Number(value))}
-                        value={String(field.value)}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a category" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {categories.map((parent) =>
-                            parent.sub_categories.length > 0 ? (
-                              // CASE A: Parent has sub-categories -> Render Group
-                              <SelectGroup key={parent.category_id}>
-                                <SelectLabel className="pl-2 py-1 text-xs font-bold text-muted-foreground uppercase tracking-wider bg-gray-50">
-                                  {parent.name}
-                                </SelectLabel>
-                                {parent.sub_categories.map((child: any) => (
-                                  <SelectItem
-                                    key={child.category_id}
-                                    value={String(child.category_id)}
-                                    className="pl-6"
-                                  >
-                                    {child.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectGroup>
-                            ) : (
-                              // CASE B: Parent has NO sub-categories (Atomic) -> Render as Item
-                              <SelectItem
-                                key={parent.category_id}
-                                value={String(parent.category_id)}
-                              >
+                control={editForm.control}
+                name="category_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category</FormLabel>
+                    <Select
+                      onValueChange={(value) => field.onChange(Number(value))}
+                      value={String(field.value)}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {categories.map((parent) =>
+                          parent.sub_categories.length > 0 ? (
+                            // CASE A: Parent has sub-categories -> Render Group
+                            <SelectGroup key={parent.category_id}>
+                              <SelectLabel className="pl-2 py-1 text-xs font-bold text-muted-foreground uppercase tracking-wider bg-gray-50">
                                 {parent.name}
-                              </SelectItem>
-                            )
-                          )}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
+                              </SelectLabel>
+                              {parent.sub_categories.map((child: any) => (
+                                <SelectItem
+                                  key={child.category_id}
+                                  value={String(child.category_id)}
+                                  className="pl-6"
+                                >
+                                  {child.name}
+                                </SelectItem>
+                              ))}
+                            </SelectGroup>
+                          ) : (
+                            // CASE B: Parent has NO sub-categories (Atomic) -> Render as Item
+                            <SelectItem
+                              key={parent.category_id}
+                              value={String(parent.category_id)}
+                            >
+                              {parent.name}
+                            </SelectItem>
+                          )
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
                 )}
               />
 
