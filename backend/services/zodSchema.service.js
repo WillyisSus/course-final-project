@@ -33,6 +33,16 @@ export const updateUserSchema = z.object({
       message: "Invalid date format",
   }),
 });
+export const updatePasswordDueToForgotSchema = z.object({
+  token: z.string(),
+  email: z.email(),
+  new_password: z.string()
+    .min(8, { message: "New password must be at least 8 characters long" })
+    .regex(/[A-Z]/, { message: "New password must contain at least one uppercase letter" })
+    .regex(/[a-z]/, { message: "New password must contain at least one lowercase letter" }) 
+    .regex(/[0-9]/, { message: "New password must contain at least one number" })
+    .regex(/[^a-zA-Z0-9]/, { message: "New password must contain at least one special character" }),
+});
 export const changePasswordSchema = z.object({
   old_password: z.string().min(8, { message: "Old password must be at least 8 characters long" }),
   new_password: z.string()

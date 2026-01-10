@@ -96,7 +96,7 @@ const LoginPage = () => {
                     <div className="flex items-center justify-between">
                       <FormLabel className="text-base">Password</FormLabel>
                       <Link
-                        to="/forgot-password"
+                        to="/forgot-password/"
                         className="text-sm text-blue-600 hover:underline"
                       >
                         Forgot password?

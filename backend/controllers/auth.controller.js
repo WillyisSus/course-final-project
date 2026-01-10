@@ -263,7 +263,38 @@ const authController = {
     },
     forgotPassword: async (req, res) => {
         try {
-            const { email, new_password } = req.body;
+            const {email} = req.body;
+            if (!email) {
+                return res.status(400).json({ message: "Email is required" });
+            }
+            const user = await UserService.findUserByEmail(email, true);
+            if (!user) return res.status(404).json({ message: "User not found" });
+            const requestToken = await generateToken.generateAccessToken({email: user.email})
+            const resetLink = `${process.env.FRONTEND_URL}/forgot-password/${requestToken}`;
+            const {subject, html} = emailTemplates.forgotPasswordRequest(user.full_name, resetLink);
+            await sendEmail({to: user.email, subject,  html});
+            res.json({ message: "Password reset link sent to your email" });
+        }
+        catch (error) {
+            res.status(500).json({ message: error.message });
+        }
+    },
+    updatePasswordDueToForgot: async (req, res) => {
+        try {
+            const { token, email, new_password } = req.body;
+            if (!token || !email || !new_password) {
+                return res.status(400).json({ message: "Token, email and new password are required" });
+            }
+            const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+                if (err) {
+                    console.error("Token Verification Error:", err);
+                    return res.status(401).json({ message: 'Invalid or expired token. Please request a new password reset.' });
+                }
+                return decoded;
+            });
+            if (decoded.email !== email) {
+                return res.status(400).json({ message: "Invalid token for the provided email" });
+            }
             const user = await UserService.findUserByEmail(email, true);
             if (!user) return res.status(404).json({ message: "User not found" });
             const hashedNewPassword = await bcryptjs.hash(new_password, 10);

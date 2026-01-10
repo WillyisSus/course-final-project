@@ -20,6 +20,7 @@ import BlockedBidderTab from './components/BlockedBidderTab'
 import BlockedByProductTab from './components/BlockedByProductTab'
 import FavoriteProductTab from './components/FavoriteProductTab'
 import ProductTransactionTab from './components/ProductTransactionTab'
+import ForgotPasswordPage from './pages/ForgotPasswordPage'
 const router = createBrowserRouter([
   {
     path:"",
@@ -80,6 +81,12 @@ const router = createBrowserRouter([
   },{
     path: "verify-otp",
     Component: VerifyOtpPage
+  }, {
+    path: "forgot-password/:token",
+    Component: ForgotPasswordPage
+  },{
+    path: "forgot-password",
+    Component: ForgotPasswordPage
   },{
     path: "*",
     Component: NotFoundPage

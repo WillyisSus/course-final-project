@@ -142,5 +142,20 @@ export const emailTemplates = {
         <p>Keep it up and thanks for being a valued member of our marketplace.</p>
       </div>
     `
+  }),
+
+  // I. Forgot Password Request
+  forgotPasswordRequest: (userName, resetUrl) => ({
+    subject: "Reset Your BigBiddie Password",
+    html: `
+      <div style="font-family: sans-serif; padding: 20px;">
+        <h2>Password Reset Request</h2>
+        <p>Hi ${userName},</p>
+        <p>We received a request to reset your password. Click the button below to create a new password:</p>
+        <a href="${resetUrl}" style="background: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0;">Reset Password</a>
+        <p>This link will expire in 15 minute for security reasons.</p>
+        <p>If you didn't request a password reset, you can safely ignore this email. Do not share this email at risk of compromising your account</p>
+      </div>
+    `
   })
 };
