@@ -1,4 +1,7 @@
 import { FeedbackService } from '../services/feedback.service.js';
+import { ProductService } from '../services/product.service.js';
+import { UserService } from '../services/user.service.js';
+import { emailTemplates, sendEmail } from '../utils/email.js';
 
 const feedbackController = {
     // GET /api/feedbacks?user_id=123
@@ -25,20 +28,25 @@ const feedbackController = {
     // POST /api/feedbacks
     postOne: async (req, res) => {
         try {
-            // 1. Identify the reviewer (the logged-in user)
             const from_user_id = req.user.user_id;
-
-            // 2. Prepare the data
-            // The body should contain: { product_id, to_user_id, rating, comment }
-            // Note: ideally, 'to_user_id' should be calculated server-side based on the product
-            // to prevent manipulation, but for now we follow the Zod schema you accepted.
             const feedbackData = {
                 ...req.body,
                 from_user_id: from_user_id
             };
 
             const newFeedback = await FeedbackService.createFeedback(feedbackData);
-
+            if (newFeedback){
+                const toUser = await UserService.findUserById(newFeedback.to_user_id);
+                const product = await ProductService.findProductById(newFeedback.product_id);
+                console.log('Send email to ', toUser.email);
+                let email = {};
+                if (parseInt(newFeedback.rating) > 0){
+                    email = emailTemplates.positiveFeedback(toUser.full_name, product.name, newFeedback.comment, product.product_id)
+                } else{
+                    email = emailTemplates.negativeFeedback(toUser.full_name, product.name, newFeedback.comment, product.product_id)
+                }
+                await sendEmail({to: toUser.email, subject: email.subject, html: email.html});
+            }
             res.status(201).json({ 
                 message: "Feedback submitted successfully", 
                 data: newFeedback 
@@ -55,10 +63,6 @@ const feedbackController = {
     // PUT /api/feedbacks/:id
     putOne: async (req, res) => {
         try {
-            // In many systems, feedbacks are immutable. 
-            // If you allow editing, you should strictly check ownership here.
-            
-            // For now, allowing update via Service:
             const updatedFeedback = await FeedbackService.updateFeedback(req.params.id, req.body);
             
             res.json({ 

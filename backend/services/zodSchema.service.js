@@ -112,14 +112,14 @@ export const createProductReceiptSchema = z.object({
   paid_by_buyer: z.boolean().optional().default(false),
   confirmed_by_seller: z.boolean().optional().default(false),
   confirmed_by_buyer: z.boolean().optional(),
-  status: z.enum(["PENDING", "FINISHED", "CANCELLED"]).optional().default("PENDING"),
+  status: z.enum(["PENDING", "FINISHED", "CANCELED"]).optional().default("PENDING"),
 });
 
 export const updateProductReceiptSchema = z.object({
   paid_by_buyer: z.boolean().optional(),
   confirmed_by_seller: z.boolean().optional(),
   confirmed_by_buyer: z.boolean().optional(),
-  status: z.enum(["PENDING", "FINISHED", "CANCELLED"]).optional(),
+  status: z.enum(["PENDING", "FINISHED", "CANCELED"]).optional(),
   paypal_order: z.string().max(255).optional(),
 });
 

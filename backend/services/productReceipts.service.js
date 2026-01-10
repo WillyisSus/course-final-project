@@ -1,3 +1,4 @@
+import { where } from 'sequelize';
 import models from '../utils/db.js'; // Assuming this exports your initialized models
 
 export const ProductReceiptService = {
@@ -13,7 +14,6 @@ export const ProductReceiptService = {
         created_at: new Date()
     });
   },
-
   // 2. Get details of a specific receipt
   async getReceiptById(receiptId) {
     return await models.product_receipts.findByPk(receiptId, {
@@ -38,18 +38,23 @@ export const ProductReceiptService = {
   },
 
   // 3. Get all receipts involved with a user (either as Buyer or Seller)
-  async getUserReceipts(userId) {
-    const { Op } = models.Sequelize;
+  async getUserReceipts(userId = null, role = null) {
+    const whereClause = {};
+    if (userId && role){
+      if (role === 'BIDDER'){
+        whereClause.buyer_id = userId;
+      } else if (role === 'SELLER'){
+        whereClause.seller_id = userId;
+      }
+
+    }
     return await models.product_receipts.findAll({
-      where: {
-        [Op.or]: [
-          { buyer_id: userId },
-          { seller_id: userId }
-        ]
-      },
+      where: whereClause,
       order: [['created_at', 'DESC']],
       include: [
-        { model: models.products, as: 'product', attributes: ['name'] }
+        { model: models.products, as: 'product', attributes: ['name', 'product_id'] },
+        {model: models.users, as: 'buyer', attributes: ['user_id', 'full_name'] },
+        {model: models.users, as: 'seller', attributes: ['user_id', 'full_name'] }
       ]
     });
   },
@@ -100,6 +105,11 @@ export const ProductReceiptService = {
 
     // Buyer Actions
     if (isBuyer) {
+        if (updateData.status != undefined && updateData.status === 'CANCELED' && receipt.status !== 'CANCELED') {
+            throw new Error("Unauthorized. Buyer cannot cancel the receipt directly.");
+        }else if (updateData.status != undefined && updateData.status === 'FINISHED' && receipt.status !== 'FINISHED') {
+            receipt.status = 'FINISHED';
+        }
         if (updateData.paid_by_buyer !== undefined) receipt.paid_by_buyer = updateData.paid_by_buyer;
         if (updateData.confirmed_by_buyer !== undefined) receipt.confirmed_by_buyer = updateData.confirmed_by_buyer;
     }

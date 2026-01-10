@@ -71,7 +71,7 @@ interface Receipt {
   seller_id: number;
   buyer_id: number;
   amount: number;
-  status: "PENDING" | "CONFIRMED" | "CANCELLED" | "COMPLETED";
+  status: "PENDING" | "CANCELED" | "FINISHED";
   created_at: string;
   product: {
     product_id: number;
@@ -232,22 +232,25 @@ const CheckoutPage = () => {
     try {
       // Cancel the transaction
       await api.put(`/receipts/${receipt.receipt_id}`, {
-        status: "CANCELLED",
+        status: "CANCELED",
       });
 
       // Create automatic negative feedback
-      await api.post(`/ratings`, {
-        rated_user_id: receipt.buyer_id,
-        rating_type: "BAD",
-        reason: "Payment was not committed appropriately by buyer",
+      await api.post(`/feedbacks`, {
+        product_id: productId,
+        to_user_id: partnerId,
+        rating: "-1",
+        comment: "Payment was not committed appropriately by buyer",
       });
 
-      toast.success("Transaction cancelled and feedback created");
+      toast.success("Transaction cancelled and feedback create. Redirecting...", {duration: 1000});
       setIsCancelModalOpen(false);
       
       // Navigate back after a short delay
       setTimeout(() => {
-        navigate("/");
+        socketRef.current?.removeAllListeners('new_transaction_message');
+        socketRef.current?.disconnect();
+        navigate("/profile");
       }, 1500);
     } catch (error: any) {
       console.error("Failed to cancel transaction", error);
@@ -327,7 +330,13 @@ const CheckoutPage = () => {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <header className="bg-white border-b px-6 py-4 flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+          <Button variant="ghost" size="icon" onClick={() => 
+            {
+              socketRef.current?.removeAllListeners('new_transaction_message');
+              socketRef.current?.disconnect();
+              navigate(-1)
+            }
+            }>
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div>
@@ -522,7 +531,12 @@ const CheckoutPage = () => {
               </CardContent>
 
               <CardFooter className="bg-gray-50/50 border-t p-2 flex flex-col gap-3">
-                {!receipt.paid_by_buyer && !isOwner && (
+                {receipt.status === "CANCELED" && (
+                  <div className="w-full p-3 bg-red-100 text-red-800 rounded-lg text-center font-bold text-sm border border-red-200">
+                    ❌ Transaction Canceled by Seller
+                  </div>
+                )}
+                {!receipt.paid_by_buyer && !isOwner && receipt.status !== "CANCELED" && (
                   <div className="w-full">
                     <CheckoutButton
                       amount={finalPrice}
@@ -533,7 +547,8 @@ const CheckoutPage = () => {
                 )}
                 {isOwner &&
                   receipt.paid_by_buyer &&
-                  !receipt.confirmed_by_seller && (
+                  !receipt.confirmed_by_seller &&
+                  receipt.status !== "CANCELED" && (
                     <Button
                       className="w-2/3 bg-blue-600 hover:bg-blue-700"
                       onClick={() => handleUpdateStatus("confirm_payment")}
@@ -542,20 +557,20 @@ const CheckoutPage = () => {
                       Confirm Payment & Ship
                     </Button>
                   )}
-                {
-                  isOwner && (
-                    <Button
-                      variant={"secondary"}
-                      className="w-2/3 bg-red-500 hover:bg-red-600 text-white"
-                    >
-                      <XCircle className="w-4 h-4 mr-2" />
-                      Cancel Transaction
-                    </Button>
-                  )
-                }
+                {isOwner && receipt.status !== "CANCELED" && (
+                  <Button
+                    variant={"secondary"}
+                    className="w-2/3 bg-red-500 hover:bg-red-600 text-white"
+                    onClick={() => setIsCancelModalOpen(true)}
+                  >
+                    <XCircle className="w-4 h-4 mr-2" />
+                    Cancel Transaction
+                  </Button>
+                )}
                 {!isOwner &&
                   receipt.paid_by_buyer &&
-                  !receipt.confirmed_by_buyer && (
+                  !receipt.confirmed_by_buyer &&
+                  receipt.status !== "CANCELED" && (
                     <Button
                       disabled={!receipt.confirmed_by_buyer}
                       className="w-2/3 bg-blue-600 hover:bg-blue-700"
@@ -565,7 +580,7 @@ const CheckoutPage = () => {
                       Confirm Item Received
                     </Button>
                   )}
-                {receipt.confirmed_by_buyer && (
+                {receipt.confirmed_by_buyer && receipt.status !== "CANCELED" && (
                   <div className="w-2/3 p-3 bg-green-100 text-green-800 rounded-lg text-center font-bold text-sm border border-green-200">
                     🎉 Transaction Completed Successfully!
                   </div>

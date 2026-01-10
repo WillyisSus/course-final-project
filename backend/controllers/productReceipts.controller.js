@@ -1,10 +1,20 @@
 import { ProductService } from "../services/product.service.js";
 import { ProductReceiptService } from "../services/productReceipts.service.js";
+import { UserService } from "../services/user.service.js";
+import { emailTemplates, sendEmail } from "../utils/email.js";
 const productReceiptController = {
-    // GET /api/receipts?product_id=XXX
+    // GET /api/receipts?product_id=XXX&role=BIDDER/SELLER/ADMIN
     getAll: async (req, res) => {
         try {
             const product_id = req.query.product_id;
+            const role = req.query.role;
+            const user = req.user;
+            if (role && role === 'ADMIN' && user.role != 'ADMIN'){
+                return res.status(403).json({ message: "Access denied. Who are you?" });
+            }
+            if (!product_id && !role){
+                return res.status(400).json({ message: "product_id or role query parameter is required" });
+            }
             if (product_id) {
                 const receipt = await ProductReceiptService.getReceiptByProductId(product_id);
                 if (!receipt) {
@@ -14,8 +24,16 @@ const productReceiptController = {
                     message: "Receipt details retrieved",
                     data: receipt
                 });
+            }else{
+                const receipts = await ProductReceiptService.getUserReceipts(user.user_id, role);
+                if (!receipts || receipts.length === 0) {
+                    return res.status(404).json({ message: "No receipts found for the user" });
+                }
+                return res.json({
+                    message: "User receipts retrieved",
+                    data: receipts
+                });
             }
-            res.status(400).json({ message: "product_id query parameter is required" });
         } catch (error) {
             console.error(error);
             res.status(500).json({ message: "Internal Server Error" });
@@ -90,9 +108,14 @@ const productReceiptController = {
             const receiptId = req.params.id;
             const userId = req.user.user_id;
             const updateData = req.body; // e.g. { paid_by_buyer: true }
-
+            
             const updatedReceipt = await ProductReceiptService.updateReceiptStatus(receiptId, userId, updateData);
-
+            if (updatedReceipt.status === 'CANCELED'){
+                const product = await ProductService.findProductById(updatedReceipt.product_id);
+                const buyer = await UserService.findUserById(updatedReceipt.buyer_id);
+                const {subject, html} = emailTemplates.canceledTransactionBySeller(buyer.full_name, product.name, "Please check the following feedback for reason of cancellation.", product.product_id);
+                await sendEmail({to: buyer.email, subject: subject, html: html})
+            }
             res.json({ 
                 message: "Receipt updated successfully", 
                 data: updatedReceipt 

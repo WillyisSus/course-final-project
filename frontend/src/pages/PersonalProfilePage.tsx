@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { Outlet, useLocation, useNavigate } from "react-router";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import UserProfileTab from "@/components/UserProfileTab";
 
 const PersonalProfilePage = () => {
   const { user } = useSelector((state: any) => state.auth);
@@ -30,9 +31,6 @@ const PersonalProfilePage = () => {
   // 2. Handle Tab Click -> Navigate instead of just switching content
   const handleTabChange = (value: string) => {
     switch (value) {
-      case "profile":
-        navigate("/profile");
-        break;
       case "autobids":
         navigate("/profile/autobids");
         break;
@@ -60,17 +58,14 @@ const PersonalProfilePage = () => {
       </div>
     );
   return (
-    <div className="container mx-auto py-10 space-y-8 max-w-5xl">
+    <div className="container mx-auto py-10 space-y-8 max-w-[1200px]">
       {/* PAGE HEADER */}
       <div className="space-y-2">
         <h1 className="text-3xl font-bold tracking-tight text-gray-900">
           My Account
         </h1>
-        <p className="text-muted-foreground">
-          Manage your profile and auction activities
-        </p>
       </div>
-
+      <UserProfileTab/>
       {/* We use the Tabs component for the VISUALS (List & Triggers),
                but we remove TabsContent.
                We control the 'value' prop to match the URL.
@@ -80,8 +75,7 @@ const PersonalProfilePage = () => {
         onValueChange={handleTabChange}
         className="w-full space-y-6"
       >
-        <TabsList className="grid w-full h-fit grid-cols-2 md:w-auto md:grid-cols-3 bg-muted/50 p-1">
-          <TabsTrigger value="profile">Personal Profile</TabsTrigger>
+        <TabsList className="flex flex-row flex-wrap gap-2 w-full bg-muted/50 p-1">
           <TabsTrigger value="autobids">Auto-Bid History</TabsTrigger>
           <TabsTrigger value="seller">Seller Dashboard</TabsTrigger>
           <TabsTrigger value="blocked-bidders">Blocked Bidders</TabsTrigger>
@@ -92,7 +86,7 @@ const PersonalProfilePage = () => {
 
       {/* 3. RENDER CONTENT VIA OUTLET */}
       {/* We pass the 'user' object via context so children can access it without Redux if needed */}
-      <div className="animate-in fade-in duration-300">
+      <div className="animate-in fade-in duration-300 w-full">
         <Outlet context={{ user }} />
       </div>
     </div>

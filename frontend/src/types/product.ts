@@ -35,6 +35,17 @@ export interface ProductComment{
   user: User;
   replies?: ProductComment[];
 }
+export interface Receipt{
+  receipt_id: number;
+  product_id: number;
+  buyer_id: number;
+  seller_id: number;
+  amount: string;
+  created_at: string;
+  confirmed_by_buyer: boolean;
+  confirmed_by_seller: boolean;
+  status: 'PENDING' | 'FINISHED' | 'CANCELED';
+}
 export interface Product {
   product_id: number;
   seller_id: number;
@@ -57,6 +68,7 @@ export interface Product {
   category: Category;
   seller: User;
   winner?: User;
+  receipt?: Receipt
 }
 
 // The raw form values from your React Hook Form or state

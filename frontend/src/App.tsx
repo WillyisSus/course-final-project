@@ -38,11 +38,12 @@ const router = createBrowserRouter([
         path: "profile",
         element: <PersonalProfilePage/>,
         children: [
+          // {
+          //   index:true,
+          //   Component: UserProfileTab
+          // },
           {
-            index:true,
-            Component: UserProfileTab
-          },
-          {
+            index: true,
             path: "autobids",
             Component: AutoBidHistoryTab
           },

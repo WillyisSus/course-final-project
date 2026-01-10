@@ -48,6 +48,11 @@ export default class product_receipts extends Model {
         allowNull: true,
         defaultValue: false
       },
+      confirmed_by_buyer: {
+        type: DataTypes.BOOLEAN,
+        allowNull: true,
+        defaultValue: false
+      },
       status: {
         type: DataTypes.ENUM("PENDING","FINISHED","CANCELLED"),
         allowNull: true,

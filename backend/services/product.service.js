@@ -85,7 +85,12 @@ export const ProductService = {
           model: models.users,
           as: 'seller',
           attributes: ['full_name', 'positive_rating']
+        },{
+          model: models.product_receipts,
+          as: 'receipt',
+          required: false
         }
+
       ],
      
     });
