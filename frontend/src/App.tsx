@@ -81,9 +81,6 @@ const router = createBrowserRouter([
   },{
     path: "verify-otp",
     Component: VerifyOtpPage
-  }, {
-    path: "forgot-password/:token",
-    Component: ForgotPasswordPage
   },{
     path: "forgot-password",
     Component: ForgotPasswordPage

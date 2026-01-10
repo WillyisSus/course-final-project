@@ -145,15 +145,15 @@ export const emailTemplates = {
   }),
 
   // I. Forgot Password Request
-  forgotPasswordRequest: (userName, resetUrl) => ({
+  forgotPasswordRequest: (userName, otpCode) => ({
     subject: "Reset Your BigBiddie Password",
     html: `
       <div style="font-family: sans-serif; padding: 20px;">
         <h2>Password Reset Request</h2>
         <p>Hi ${userName},</p>
-        <p>We received a request to reset your password. Click the button below to create a new password:</p>
-        <a href="${resetUrl}" style="background: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0;">Reset Password</a>
-        <p>This link will expire in 15 minute for security reasons.</p>
+        <p>We received a request to reset your password. This is the OTP to verify your request, please do not share it to others:</p>
+        <h1 style="color: #2563eb; letter-spacing: 5px;">${otpCode}</h1>
+        <p>This OTP will expire in 1 minute for security reasons.</p>
         <p>If you didn't request a password reset, you can safely ignore this email. Do not share this email at risk of compromising your account</p>
       </div>
     `

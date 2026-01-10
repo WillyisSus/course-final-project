@@ -26,16 +26,19 @@ export const UserService = {
   },
 
   // fetching a user profile by ID, but stripping out sensitive auth data
-  async findUserById(userId, withPassword = false) {
+  async findUserById(userId, withPassword = false, withOtp = false) {
     const options = {
       where: { user_id: userId },
       attributes: {
-        exclude: ['refresh_token', 'otp_code'] // always exclude these
+        exclude: ['refresh_token', ] // always exclude these
       }
     };
     
     if (!withPassword) {
       options.attributes.exclude.push('password_hash');
+    }
+    if (!withOtp){
+      options.attributes.exclude.push('otp_code', 'otp_expiry');
     }
     console.log("Options", options);
     console.log("Finding user by ID:", userId);
@@ -54,18 +57,20 @@ export const UserService = {
     });
   },
   // helper to find by email (useful for login flows), explicitly requesting the password if needed
-  async findUserByEmail(email, withPassword = false) {
+  async findUserByEmail(email, withPassword = false, withOtp = false) {
     const options = {
       where: { email: email },
       attributes: {
-        exclude: ['refresh_token', 'otp_code'] // always exclude these
+        exclude: ['refresh_token'] // always exclude these
       }
     };
     
     if (!withPassword) {
       options.attributes.exclude.push('password_hash');
     }
-
+    if (!withOtp){
+      options.attributes.exclude.push('otp_code', 'otp_expiry');
+    }
     return await models.users.findOne(options);
   },
   async getRefreshTokenByUserId(userId) {

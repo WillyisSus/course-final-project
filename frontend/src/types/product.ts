@@ -94,7 +94,6 @@ export interface CreateProductInput {
   start_date?: string; // ISO string
   end_date: string;    // ISO string
   is_auto_extend: boolean;
-  
   // The crucial part: The actual file objects from the input
   images: File[]; 
 }

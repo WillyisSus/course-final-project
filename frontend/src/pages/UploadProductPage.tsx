@@ -134,6 +134,7 @@ const UploadProductPage = () => {
           if (key === "price_buy_now" || key === "price_start" || key === "price_step") {
             value = Number(value) * 1000; // Convert to smallest currency unit
           }
+          console.log("Appending to formData:", key, value);
           formData.append(key, String(value));
         }
       });

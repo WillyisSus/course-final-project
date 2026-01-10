@@ -26,6 +26,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input"; // Import Input
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -34,12 +36,31 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { Product, ProductComment } from "@/types/product";
 import type { Bid, CreateBid, AutoBid } from "@/types/bid";
 import { useAppSelector } from "@/store/hooks";
-import { set, z, type ZodError } from "zod";
+import { z, type ZodError } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import type { Category } from "@/types/product";
 const blockSchema = z.object({
   reason: z
     .string()
@@ -52,8 +73,24 @@ const descriptionSchema = z.object({
     .min(20, "Description update must be at least 20 characters.")
     .max(2000, "Description cannot exceed 2000 characters."),
 });
+
+const updateProductSchema = z.object({
+  name: z
+    .string()
+    .min(5, "Product name must be at least 5 characters")
+    .max(100, "Product name cannot exceed 100 characters"),
+  category_id: z.number().min(1, "Please select a category"),
+  price_step: z.number().min(1000, "Price step must be at least ₫1,000"),
+  price_buy_now: z.number().min(0).optional().nullable(),
+  end_date: z.string().min(1, "End date is required"),
+  allow_first_time_bidder: z.boolean(),
+  is_auto_extend: z.boolean(),
+});
+
 type DescriptionFormValues = z.infer<typeof descriptionSchema>;
 type BlockFormValues = z.infer<typeof blockSchema>;
+type UpdateProductFormValues = z.infer<typeof updateProductSchema>;
+
 const ProductDetailPage = () => {
   const { id } = useParams();
   const [product, setProduct] = useState<Product>(new Object() as Product);
@@ -62,9 +99,11 @@ const ProductDetailPage = () => {
   const [bidsHistory, setBidsHistory] = useState<Bid[]>([]);
   const [comments, setComments] = useState<ProductComment[]>([]);
   const [currentAutoBid, setCurrentAutoBid] = useState<AutoBid | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [priceChanged, setPriceChanged] = useState(false);
   const [isDescModalOpen, setIsDescModalOpen] = useState(false);
   const [isBuyNowModalOpen, setIsBuyNowModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [bidderToBlock, setBidderToBlock] = useState<{
     id: number;
     name: string;
@@ -78,7 +117,10 @@ const ProductDetailPage = () => {
     user && product.seller_id && user.user_id === product.seller_id
   );
   const isQualifiedToBid = Boolean(
-    (user && (parseInt(user.positive_rating)*1.0 / (parseInt(user.positive_rating) + parseInt(user.negative_rating)) >= 0.8))
+    user &&
+      (parseInt(user.positive_rating) * 1.0) /
+        (parseInt(user.positive_rating) + parseInt(user.negative_rating)) >=
+        0.8
   );
   const isExpired =
     product.status === "SOLD" ||
@@ -93,29 +135,80 @@ const ProductDetailPage = () => {
   const descForm = useForm<DescriptionFormValues>({
     resolver: zodResolver(descriptionSchema),
   });
+  const editForm = useForm<UpdateProductFormValues>({
+    resolver: zodResolver(updateProductSchema),
+    defaultValues: {
+      name: "",
+      category_id: 1,
+      price_step: 1000,
+      price_buy_now: null,
+      end_date: "",
+      allow_first_time_bidder: false,
+      is_auto_extend: false,
+    },
+  });
   // --- FETCH DATA---
+  useEffect(() => {
+    api
+      .get("/categories")
+      .then((res) => setCategories(res.data.data || []))
+      .catch(console.error);
+  }, []);
+  useEffect(() => {
+    if (isEditModalOpen && product.product_id) {
+      // Format date for datetime-local input (YYYY-MM-DDTHH:mm)
+      // Note: This assumes local time.
+      const dateObj = new Date(product.end_date);
+      // Adjust to local ISO string manually to fit input
+      const localIsoString = new Date(
+        dateObj.getTime() - dateObj.getTimezoneOffset() * 60000
+      )
+        .toISOString()
+        .slice(0, 16);
+      editForm.reset({
+        name: product.name,
+        category_id: product.category_id,
+        price_step: Number(product.price_step),
+        price_buy_now: product.price_buy_now
+          ? Number(product.price_buy_now)
+          : null,
+        end_date: localIsoString,
+        allow_first_time_bidder: product.allow_first_time_bidder,
+        is_auto_extend: product.is_auto_extend,
+      });
+    }
+  }, [isEditModalOpen, product, editForm]);
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
         const res = await api.get(`/products/${id}`);
         setProduct(res.data.data as Product);
+        if (!(res.data.data as Product).allow_first_time_bidder &&  (res.data.data as Product).seller_id !== user?.user_id) {
+          console.log("First time bidders are not allowed for this product.");
+          const userBids = await api.get('/auto-bids')
+          .then((bidRes) => bidRes.data.data as AutoBid[])
+          .catch(() => []);
+          if (user && userBids.length === 0) {
+            toast.error("First-time bidders are not allowed to bid on this product. Please place an auto-bid on another product first.");
+            navigate("/");
+          }
+        }
         document.title = res.data.data.name + " | Big Biddie";
         if (res.data.data.category_id) {
           const relatedRes = await api.get(
-            `/products?category_id=${res.data.data.category_id}&limit=6`
+            `/products?category=${res.data.data.category_id}&limit=6`
           );
           const filtered = relatedRes.data.data
             .filter((p: any) => p.product_id !== Number(id))
             .slice(0, 5);
           setRelatedProducts(filtered);
         }
-        
       } catch (error) {
         if ((error as any).response && (error as any).response.status === 404) {
           toast.error("Product not found.");
           navigate("/not-found");
-        } 
+        }
         console.error("Failed to load product", error);
       } finally {
         setLoading(false);
@@ -126,11 +219,13 @@ const ProductDetailPage = () => {
   useEffect(() => {
     const checkIfUserIsBlocked = async () => {
       try {
-        const res = await api.get(
-          `/products/${id}/is-blocked`
-        );
+        const res = await api.get(`/products/${id}/is-blocked`);
         if (res.data.data) {
-          toast.error(`You are blocked from bidding on this product at:  ${new Date(res.data.data.blocked_at).toLocaleString()}. Reason: ${res.data.data.reason}`);
+          toast.error(
+            `You are blocked from bidding on this product at:  ${new Date(
+              res.data.data.blocked_at
+            ).toLocaleString()}. Reason: ${res.data.data.reason}`
+          );
           navigate("/");
         }
       } catch (error) {
@@ -145,7 +240,6 @@ const ProductDetailPage = () => {
   useEffect(() => {
     if (isDescModalOpen) descForm.reset();
   }, [isDescModalOpen, descForm]);
-  
 
   useEffect(() => {
     const fetchBidsHistory = async () => {
@@ -197,7 +291,12 @@ const ProductDetailPage = () => {
             setIsFavorite(true);
           }
         } catch (error) {
+          if ((error as any).response && (error as any).response.status === 404) {
+            setIsFavorite(false);
+          }else{
           console.error("Failed to check favorite status", error);
+
+          }
         }
       };
       checkFavorite();
@@ -264,21 +363,38 @@ const ProductDetailPage = () => {
     });
     return () => {
       if (socketRef.current) {
-        socketRef.current.removeAllListeners('product_updated');
-        socketRef.current.removeAllListeners('new_comment');
+        socketRef.current.removeAllListeners("product_updated");
+        socketRef.current.removeAllListeners("new_comment");
         socketRef.current.emit("leave_product", id);
         socketRef.current.disconnect();
       }
     };
   }, [id]);
 
-  // --- HANDLERS ---
+  const onUpdateProductSubmit = async (data: UpdateProductFormValues) => {
+    try {
+      const payload = {
+        ...data,
+        price_buy_now: data.price_buy_now || null, 
+      };
+
+      await api.put(`/products/${id}`, payload);
+      toast.success("Product updated successfully!");
+      setIsEditModalOpen(false);
+
+      // Refresh local product data
+      const res = await api.get(`/products/${id}`);
+      setProduct(res.data.data);
+    } catch (error: any) {
+      console.error("Failed to update product", error);
+      toast.error(error.response?.data?.message || "Failed to update product.");
+    }
+  };
   const handlePlaceBid = async (amount: number) => {
     try {
       if (product.price_buy_now && amount >= Number(product.price_buy_now)) {
         setIsBuyNowModalOpen(true);
-      }
-      else if (currentAutoBid) {
+      } else if (currentAutoBid) {
         const payload: CreateBid = { max_price: amount * 1000 };
         await api.put(`/auto-bids/${currentAutoBid.auto_bid_id}`, payload);
         toast.success("Bid updated successfully!");
@@ -317,14 +433,14 @@ const ProductDetailPage = () => {
   const handleBuyNow = async () => {
     try {
       toast.info("Processing Buy Now...");
-      const res = await api.post(`/receipts`, {product_id: Number(id)});
+      const res = await api.post(`/receipts`, { product_id: Number(id) });
       if (res.data.data && res.status === 201) {
         toast.success("Buy Now successful! Redirecting to checkout...");
         navigate("/checkout/" + product.product_id);
       }
     } catch (error) {
       toast.error("Failed to process Buy Now. Please try again.");
-    } finally{
+    } finally {
       setIsBuyNowModalOpen(false);
     }
   };
@@ -380,7 +496,7 @@ const ProductDetailPage = () => {
         await api.delete(`/watchlists/${id}`);
         toast.success("Updated watchlist");
       } else {
-        await api.post('/watchlists', { product_id: Number(id) });
+        await api.post("/watchlists", { product_id: Number(id) });
         toast.success("Added to favorites");
       }
       setIsFavorite(!isFavorite);
@@ -444,7 +560,7 @@ const ProductDetailPage = () => {
                   ? "bg-amber-50 border-amber-200"
                   : isWinner
                   ? "bg-green-50 border-green-200"
-                  : isQualifiedToBid 
+                  : isQualifiedToBid
                   ? "bg-grey-50 border-grey-200"
                   : "bg-red-50 border-red-200"
               }`}
@@ -539,6 +655,7 @@ const ProductDetailPage = () => {
                   </div>
                   <Button
                     variant="outline"
+                    onClick={() => setIsEditModalOpen(true)}
                     className="gap-2 border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100"
                   >
                     <Pencil className="w-4 h-4" /> Edit Product
@@ -573,9 +690,17 @@ const ProductDetailPage = () => {
                       variant={isFavorite ? "secondary" : "outline"}
                       onClick={toggleFavorite}
                       disabled={loadingFav}
-                      className={`w-full h-12 text-lg font-bold gap-2 border-slate-200 shadow-md transition-all ${isFavorite ? "text-red-600 bg-red-50 border-red-100" : "text-slate-600"}`}
+                      className={`w-full h-12 text-lg font-bold gap-2 border-slate-200 shadow-md transition-all ${
+                        isFavorite
+                          ? "text-red-600 bg-red-50 border-red-100"
+                          : "text-slate-600"
+                      }`}
                     >
-                      <Heart className={`w-5 h-5 ${isFavorite ? "fill-current" : ""}`} />
+                      <Heart
+                        className={`w-5 h-5 ${
+                          isFavorite ? "fill-current" : ""
+                        }`}
+                      />
                       {isFavorite ? "Favorited" : "Favorite"}
                     </Button>
                   )}
@@ -597,9 +722,17 @@ const ProductDetailPage = () => {
                       variant={isFavorite ? "secondary" : "outline"}
                       onClick={toggleFavorite}
                       disabled={loadingFav}
-                      className={`w-full h-12 text-lg font-bold gap-2 border-slate-200 shadow-md transition-all ${isFavorite ? "text-red-600 bg-red-50 border-red-100" : "text-slate-600"}`}
+                      className={`w-full h-12 text-lg font-bold gap-2 border-slate-200 shadow-md transition-all ${
+                        isFavorite
+                          ? "text-red-600 bg-red-50 border-red-100"
+                          : "text-slate-600"
+                      }`}
                     >
-                      <Heart className={`w-5 h-5 ${isFavorite ? "fill-current" : ""}`} />
+                      <Heart
+                        className={`w-5 h-5 ${
+                          isFavorite ? "fill-current" : ""
+                        }`}
+                      />
                       {isFavorite ? "Favorited" : "Favorite"}
                     </Button>
                   )}
@@ -614,7 +747,8 @@ const ProductDetailPage = () => {
                         Not Qualified to Bid
                       </span>
                       <p className="text-sm text-red-600">
-                        You're not qualified to Bid. Please upgrade your positive rate to be at least 80%
+                        You're not qualified to Bid. Please upgrade your
+                        positive rate to be at least 80%
                       </p>
                     </div>
                     <Link
@@ -629,9 +763,17 @@ const ProductDetailPage = () => {
                       variant={isFavorite ? "secondary" : "outline"}
                       onClick={toggleFavorite}
                       disabled={loadingFav}
-                      className={`w-full h-12 text-lg font-bold gap-2 border-slate-200 shadow-md transition-all ${isFavorite ? "text-red-600 bg-red-50 border-red-100" : "text-slate-600"}`}
+                      className={`w-full h-12 text-lg font-bold gap-2 border-slate-200 shadow-md transition-all ${
+                        isFavorite
+                          ? "text-red-600 bg-red-50 border-red-100"
+                          : "text-slate-600"
+                      }`}
                     >
-                      <Heart className={`w-5 h-5 ${isFavorite ? "fill-current" : ""}`} />
+                      <Heart
+                        className={`w-5 h-5 ${
+                          isFavorite ? "fill-current" : ""
+                        }`}
+                      />
                       {isFavorite ? "Favorited" : "Favorite"}
                     </Button>
                   )}
@@ -660,9 +802,17 @@ const ProductDetailPage = () => {
                       variant={isFavorite ? "secondary" : "outline"}
                       onClick={toggleFavorite}
                       disabled={loadingFav}
-                      className={`w-full h-12 text-lg font-bold gap-2 border-slate-200 shadow-md transition-all ${isFavorite ? "text-red-600 bg-red-50 border-red-100" : "text-slate-600"}`}
+                      className={`w-full h-12 text-lg font-bold gap-2 border-slate-200 shadow-md transition-all ${
+                        isFavorite
+                          ? "text-red-600 bg-red-50 border-red-100"
+                          : "text-slate-600"
+                      }`}
                     >
-                      <Heart className={`w-5 h-5 ${isFavorite ? "fill-current" : ""}`} />
+                      <Heart
+                        className={`w-5 h-5 ${
+                          isFavorite ? "fill-current" : ""
+                        }`}
+                      />
                       {isFavorite ? "Favorited" : "Favorite"}
                     </Button>
                   )}
@@ -680,8 +830,15 @@ const ProductDetailPage = () => {
         <div className="bg-grey-200 border border-gray-200 w-full h-[80%] scroll-y-auto p-4 rounded-md">
           {product.product_descriptions?.length > 0 ? (
             product.product_descriptions?.map((desc, index) => (
-              <p key={index} className="flex-col flex gap-2 text-gray-700 mb-4 whitespace-pre-line">
-                {desc.created_at && <span className="font-light text-sm text-gray-500">{new Date(desc.created_at).toLocaleString()}</span>}
+              <p
+                key={index}
+                className="flex-col flex gap-2 text-gray-700 mb-4 whitespace-pre-line"
+              >
+                {desc.created_at && (
+                  <span className="font-light text-sm text-gray-500">
+                    {new Date(desc.created_at).toLocaleString()}
+                  </span>
+                )}
                 <span className="font-medium">{desc.content}</span>
               </p>
             ))
@@ -910,6 +1067,211 @@ const ProductDetailPage = () => {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Update Product Details</DialogTitle>
+            <DialogDescription>
+              Modify your product listing. Note that some changes might affect
+              active bids.
+            </DialogDescription>
+          </DialogHeader>
+
+          <Form {...editForm}>
+            <form
+              onSubmit={editForm.handleSubmit(onUpdateProductSubmit)}
+              className="space-y-4 py-2"
+            >
+              {/* Product Name */}
+              <FormField
+                control={editForm.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Product Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Product Name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Category */}
+              <FormField
+                  control={editForm.control}
+                  name="category_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Category</FormLabel>
+                      <Select
+                        onValueChange={(value) => field.onChange(Number(value))}
+                        value={String(field.value)}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a category" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {categories.map((parent) =>
+                            parent.sub_categories.length > 0 ? (
+                              // CASE A: Parent has sub-categories -> Render Group
+                              <SelectGroup key={parent.category_id}>
+                                <SelectLabel className="pl-2 py-1 text-xs font-bold text-muted-foreground uppercase tracking-wider bg-gray-50">
+                                  {parent.name}
+                                </SelectLabel>
+                                {parent.sub_categories.map((child: any) => (
+                                  <SelectItem
+                                    key={child.category_id}
+                                    value={String(child.category_id)}
+                                    className="pl-6"
+                                  >
+                                    {child.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectGroup>
+                            ) : (
+                              // CASE B: Parent has NO sub-categories (Atomic) -> Render as Item
+                              <SelectItem
+                                key={parent.category_id}
+                                value={String(parent.category_id)}
+                              >
+                                {parent.name}
+                              </SelectItem>
+                            )
+                          )}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-2 gap-4">
+                {/* Price Step */}
+                <FormField
+                  control={editForm.control}
+                  name="price_step"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Step Price (₫)</FormLabel>
+                      <FormControl>
+                        <Input type="number" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Buy Now Price */}
+                <FormField
+                  control={editForm.control}
+                  name="price_buy_now"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Buy Now Price (Optional)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          placeholder="Leave empty to disable"
+                          {...field}
+                          value={field.value ?? ""}
+                          onChange={(e) =>
+                            field.onChange(
+                              e.target.value ? Number(e.target.value) : null
+                            )
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* End Date */}
+              <FormField
+                control={editForm.control}
+                name="end_date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>End Date</FormLabel>
+                    <FormControl>
+                      <Input type="datetime-local" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Checkboxes */}
+              <div className="flex flex-col gap-3 pt-2">
+                <FormField
+                  control={editForm.control}
+                  name="allow_first_time_bidder"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>Newbie Friendly</FormLabel>
+                        <FormDescription>
+                          Allow users without rating history to bid.
+                        </FormDescription>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={editForm.control}
+                  name="is_auto_extend"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>Auto-Extend</FormLabel>
+                        <FormDescription>
+                          Extend auction by 10 mins if bid placed in last 5
+                          mins.
+                        </FormDescription>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsEditModalOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={editForm.formState.isSubmitting}
+                >
+                  {editForm.formState.isSubmitting
+                    ? "Updating..."
+                    : "Save Changes"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
     </div>

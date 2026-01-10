@@ -188,7 +188,7 @@ const authController = {
         const { otp } = req.body;
         const userId = req.user.user_id; // From JWT Middleware
         console.log("Verifying OTP for User ID:", userId, "with OTP:", otp);
-        const user = await UserService.findUserById(userId);
+        const user = await UserService.findUserById(userId, false, true);
         if (!user) return res.status(404).json({ message: "User not found" });
 
         if (user.is_verified) {
@@ -269,9 +269,13 @@ const authController = {
             }
             const user = await UserService.findUserByEmail(email, true);
             if (!user) return res.status(404).json({ message: "User not found" });
-            const requestToken = await generateToken.generateAccessToken({email: user.email})
-            const resetLink = `${process.env.FRONTEND_URL}/forgot-password/${requestToken}`;
-            const {subject, html} = emailTemplates.forgotPasswordRequest(user.full_name, resetLink);
+            const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+            const otpExpiry = new Date(Date.now() + 60 * 1000);
+            await user.update({
+                otp_code: otpCode,
+                otp_expiry: otpExpiry
+            });
+            const {subject, html} = emailTemplates.forgotPasswordRequest(user.full_name, otpCode);
             await sendEmail({to: user.email, subject,  html});
             res.json({ message: "Password reset link sent to your email" });
         }
@@ -281,24 +285,26 @@ const authController = {
     },
     updatePasswordDueToForgot: async (req, res) => {
         try {
-            const { token, email, new_password } = req.body;
-            if (!token || !email || !new_password) {
+            const { otp, email, new_password } = req.body;
+            console.log("Resetting password for email:", email, "with OTP:", otp);
+            if (!otp || !email || !new_password) {
                 return res.status(400).json({ message: "Token, email and new password are required" });
             }
-            const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
-                if (err) {
-                    console.error("Token Verification Error:", err);
-                    return res.status(401).json({ message: 'Invalid or expired token. Please request a new password reset.' });
-                }
-                return decoded;
-            });
-            if (decoded.email !== email) {
-                return res.status(400).json({ message: "Invalid token for the provided email" });
+            const user = await UserService.findUserByEmail(email, true, true);
+            if (user.otp_code !== otp) {
+                console.log("Invalid OTP. Provided:", otp, "Expected:", user.otp_code);
+                return res.status(400).json({ message: "Invalid OTP code" });
             }
-            const user = await UserService.findUserByEmail(email, true);
+            if (new Date() > new Date(user.otp_expiry)) {
+                return res.status(400).json({ message: "OTP has expired" });
+            }
             if (!user) return res.status(404).json({ message: "User not found" });
             const hashedNewPassword = await bcryptjs.hash(new_password, 10);
-            await UserService.updateUser(user.user_id, { password_hash: hashedNewPassword });
+            await UserService.updateUser(user.user_id, { 
+                otp_code: null,
+                otp_expiry: null,
+                password_hash: hashedNewPassword 
+            });
             res.json({ message: "Password reset successfully" });
         }
         catch (error) {

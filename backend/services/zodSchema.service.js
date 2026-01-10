@@ -1,10 +1,10 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 /**
  * REUSABLE FRAGMENTS
  */
 const idSchema = z.coerce.number().int().positive(); // For IDs (product_id, user_id, etc.)
-const decimalSchema = z.coerce.number().positive();  // For prices
+const decimalSchema = z.coerce.number().positive(); // For prices
 
 /**
  * 1. USER SCHEMAS
@@ -13,12 +13,19 @@ const decimalSchema = z.coerce.number().positive();  // For prices
 export const registerUserSchema = z.object({
   email: z.email(), //
   // In DB it is password_hash, but input is raw password
-  password: z.string()
-  .min(8, { message: "Password must be at least 8 characters long" })
-  .regex(/[A-Z]/, { message: "Password must contain at least one uppercase letter" })
-  .regex(/[a-z]/, { message: "Password must contain at least one lowercase letter" })
-  .regex(/[0-9]/, { message: "Password must contain at least one number" })
-  .regex(/[^a-zA-Z0-9]/, { message: "Password must contain at least one special character" }),
+  password: z
+    .string()
+    .min(8, { message: "Password must be at least 8 characters long" })
+    .regex(/[A-Z]/, {
+      message: "Password must contain at least one uppercase letter",
+    })
+    .regex(/[a-z]/, {
+      message: "Password must contain at least one lowercase letter",
+    })
+    .regex(/[0-9]/, { message: "Password must contain at least one number" })
+    .regex(/[^a-zA-Z0-9]/, {
+      message: "Password must contain at least one special character",
+    }),
   full_name: z.string().min(2).max(100), //
   address: z.string().optional(),
   dob: z.coerce.date().optional(), // Coerce handles string "2000-01-01" -> Date
@@ -30,27 +37,47 @@ export const updateUserSchema = z.object({
   full_name: z.string().min(2, "Full name must be at least 2 characters"),
   email: z.email("Please enter a valid email address"),
   dob: z.string().refine((val) => !isNaN(Date.parse(val)), {
-      message: "Invalid date format",
+    message: "Invalid date format",
   }),
 });
 export const updatePasswordDueToForgotSchema = z.object({
-  token: z.string(),
+  otp: z.string().length(6, "OTP code must be 6 characters long"),
   email: z.email(),
-  new_password: z.string()
+  new_password: z
+    .string()
     .min(8, { message: "New password must be at least 8 characters long" })
-    .regex(/[A-Z]/, { message: "New password must contain at least one uppercase letter" })
-    .regex(/[a-z]/, { message: "New password must contain at least one lowercase letter" }) 
-    .regex(/[0-9]/, { message: "New password must contain at least one number" })
-    .regex(/[^a-zA-Z0-9]/, { message: "New password must contain at least one special character" }),
+    .regex(/[A-Z]/, {
+      message: "New password must contain at least one uppercase letter",
+    })
+    .regex(/[a-z]/, {
+      message: "New password must contain at least one lowercase letter",
+    })
+    .regex(/[0-9]/, {
+      message: "New password must contain at least one number",
+    })
+    .regex(/[^a-zA-Z0-9]/, {
+      message: "New password must contain at least one special character",
+    }),
 });
 export const changePasswordSchema = z.object({
-  old_password: z.string().min(8, { message: "Old password must be at least 8 characters long" }),
-  new_password: z.string()
+  old_password: z
+    .string()
+    .min(8, { message: "Old password must be at least 8 characters long" }),
+  new_password: z
+    .string()
     .min(8, { message: "New password must be at least 8 characters long" })
-    .regex(/[A-Z]/, { message: "New password must contain at least one uppercase letter" })
-    .regex(/[a-z]/, { message: "New password must contain at least one lowercase letter" }) 
-    .regex(/[0-9]/, { message: "New password must contain at least one number" })
-    .regex(/[^a-zA-Z0-9]/, { message: "New password must contain at least one special character" }),
+    .regex(/[A-Z]/, {
+      message: "New password must contain at least one uppercase letter",
+    })
+    .regex(/[a-z]/, {
+      message: "New password must contain at least one lowercase letter",
+    })
+    .regex(/[0-9]/, {
+      message: "New password must contain at least one number",
+    })
+    .regex(/[^a-zA-Z0-9]/, {
+      message: "New password must contain at least one special character",
+    }),
 });
 export const loginSchema = z.object({
   email: z.email(),
@@ -61,36 +88,44 @@ export const loginSchema = z.object({
  * 2. PRODUCT SCHEMAS
  * Matches
  */
-export const createProductSchema = z.object({
-  name: z.string().min(5).max(255), //
-  category_id: idSchema,
-  price_start: decimalSchema,
-  price_step: decimalSchema,
-  price_buy_now: decimalSchema.optional(),
-  // start_date is optional because Service defaults it to NOW if missing
-  start_date: z.coerce.date().optional(), 
-  end_date: z.coerce.date(),
-  is_auto_extend: z.coerce.boolean().optional().default(false),
-  description: z.string().min(10, "Description too short"),
-  allow_first_time_bidder: z.coerce.boolean().optional().default(true),
-  // description/images are often handled in separate endpoints or separate fields in a multipart form
-}).refine((data) => {
-    // Logic: End date must be after start date (or now)
-    const start = data.start_date || new Date();
-    return data.end_date > start;
-}, {
-    message: "End date must be after start date",
-    path: ["end_date"]
-});
+export const createProductSchema = z
+  .object({
+    name: z.string().min(5).max(255), //
+    category_id: idSchema,
+    price_start: decimalSchema,
+    price_step: decimalSchema,
+    price_buy_now: decimalSchema.optional(),
+    // start_date is optional because Service defaults it to NOW if missing
+    start_date: z.coerce.date().optional(),
+    end_date: z.coerce.date(),
+    is_auto_extend: z.coerce.boolean().optional().default(false),
+    description: z.string().min(10, "Description too short"),
+    allow_first_time_bidder: z.boolean().optional(),
+    // description/images are often handled in separate endpoints or separate fields in a multipart form
+  })
+  .refine(
+    (data) => {
+      // Logic: End date must be after start date (or now)
+      const start = data.start_date || new Date();
+      return data.end_date > start;
+    },
+    {
+      message: "End date must be after start date",
+      path: ["end_date"],
+    }
+  );
 
 export const updateProductSchema = z.object({
-  name: z.string().min(5).max(255).optional(),
-  category_id: idSchema.optional(),
-  price_start: decimalSchema.optional(),
-  price_step: decimalSchema.optional(),
-  price_buy_now: decimalSchema.optional(),
-  end_date: z.coerce.date().optional(),
-  is_auto_extend: z.boolean().optional(),
+  name: z
+    .string()
+    .min(5, "Product name must be at least 5 characters")
+    .max(100, "Product name cannot exceed 100 characters"),
+  category_id: z.number().min(1, "Please select a category"),
+  price_step: z.number().min(1000, "Price step must be at least ₫1,000"),
+  price_buy_now: z.number().min(0).optional().nullable(),
+  end_date: z.string().min(1, "End date is required"),
+  allow_first_time_bidder: z.boolean(),
+  is_auto_extend: z.boolean(),
 });
 
 export const addDescriptionSchema = z.object({
@@ -104,8 +139,8 @@ export const addDescriptionSchema = z.object({
  */
 export const createBidSchema = z.object({
   // product_id is usually in params, but if in body:
-  product_id: idSchema, 
-  amount: decimalSchema, 
+  product_id: idSchema,
+  amount: decimalSchema,
 });
 
 export const createAutoBidSchema = z.object({
@@ -123,8 +158,8 @@ export const updateAutoBidSchema = z.object({
  */
 export const createFeedbackSchema = z.object({
   product_id: idSchema,
-  to_user_id: idSchema, 
-  rating: z.coerce.number().int().min(-1).max(1), 
+  to_user_id: idSchema,
+  rating: z.coerce.number().int().min(-1).max(1),
   comment: z.string().optional(),
 });
 
@@ -137,7 +172,10 @@ export const createProductReceiptSchema = z.object({
   paid_by_buyer: z.boolean().optional().default(false),
   confirmed_by_seller: z.boolean().optional().default(false),
   confirmed_by_buyer: z.boolean().optional(),
-  status: z.enum(["PENDING", "FINISHED", "CANCELED"]).optional().default("PENDING"),
+  status: z
+    .enum(["PENDING", "FINISHED", "CANCELED"])
+    .optional()
+    .default("PENDING"),
 });
 
 export const updateProductReceiptSchema = z.object({
@@ -162,7 +200,7 @@ export const createCategorySchema = z.object({
 });
 
 /**
- * 7. SUB-RESOURCE SCHEMAS 
+ * 7. SUB-RESOURCE SCHEMAS
  * (Images, Descriptions, Blocks, Upgrades)
  */
 export const createProductImageSchema = z.object({

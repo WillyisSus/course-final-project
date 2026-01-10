@@ -69,6 +69,7 @@ const productController = {
             if (req.files.length > 4) {
                 return res.status(400).json({ message: "Maximum 4 images allowed." });
             }
+            console.log("Creating product for seller ID:", req.body );
             const newProduct = await ProductService.createProduct(req.body, sellerId);
             const imagePromises = req.files.map((file, index) => {
                 const imageUrl = `http://localhost:3000/images/${file.filename}`;
@@ -137,7 +138,7 @@ const productController = {
             const getDataToSendEmail = await ProductService.findProductById(req.params.id);
             const blockedUser = await UserService.findUserById(user_id);
             if (blockedUser && getDataToSendEmail) {
-                const {subject, html} = emailTemplates.blockNotification(blockedUser.full_name, getDataToSendEmail.name, reason)
+                const {subject, html} = emailTemplates.blockNotification(blockedUser.full_name, getDataToSendEmail.name, reason, req.params.id)
                 await sendEmail({to: blockedUser.email, subject, html})
             }
             res.status(201).json({ message: "User blocked from this product", data: result });
