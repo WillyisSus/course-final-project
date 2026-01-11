@@ -275,7 +275,6 @@ const ProductDetailPage = () => {
       }
   };
   useEffect(() => {
-    
     if (id) fetchComments();
   }, [id]);
   const fetchCurrentAutoBid = async () => {
@@ -418,7 +417,7 @@ const ProductDetailPage = () => {
         };
         await api.post("/auto-bids", payload);
         toast.success("Bid placed successfully!");
-        fetchBidsHistory();
+        fetchCurrentAutoBid();
       }
       // No need to manually refresh product here; socket handles it!
     } catch (error: any) {

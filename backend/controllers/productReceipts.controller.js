@@ -110,11 +110,17 @@ const productReceiptController = {
             const updateData = req.body; // e.g. { paid_by_buyer: true }
             
             const updatedReceipt = await ProductReceiptService.updateReceiptStatus(receiptId, userId, updateData);
-            if (updatedReceipt.status === 'CANCELED'){
+            if (updatedReceipt && updatedReceipt.status === 'CANCELED'){
                 const product = await ProductService.findProductById(updatedReceipt.product_id);
                 const buyer = await UserService.findUserById(updatedReceipt.buyer_id);
                 const {subject, html} = emailTemplates.canceledTransactionBySeller(buyer.full_name, product.name, "Please check the following feedback for reason of cancellation.", product.product_id);
                 await sendEmail({to: buyer.email, subject: subject, html: html})
+            }
+            if (updatedReceipt) {
+                const io = req.app.get('io');
+                io.to(`transaction_${updatedReceipt.product_id}`).emit('receipt_updated', {
+                    type: 'RECEIPT_UPDATED',
+                })
             }
             res.json({ 
                 message: "Receipt updated successfully", 

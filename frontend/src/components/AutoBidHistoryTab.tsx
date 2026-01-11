@@ -102,10 +102,10 @@ const AutoBidHistoryTab = () => {
                         {item.product.name}
                       </TableCell>
                       <TableCell className="font-bold">
-                        ${Number(item.max_price).toLocaleString()}
+                        ₫{Number(item.max_price).toLocaleString()}
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        ${Number(item.product.price_current).toLocaleString()}
+                        ₫{Number(item.product.price_current).toLocaleString()}
                       </TableCell>
                       <TableCell>
                         {isSold && isWinner ? (

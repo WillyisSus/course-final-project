@@ -123,22 +123,22 @@ const CheckoutPage = () => {
     },
   });
   // 1. Fetch Receipt
+  const fetchReceipt = async () => {
+    try {
+      const res = await api.get(`/receipts?product_id=${productId}`);
+      const data = Array.isArray(res.data.data)
+        ? res.data.data[0]
+        : res.data.data;
+      console.log(data);
+      setReceipt(data);
+    } catch (error) {
+      console.error("Failed to load receipt", error);
+      toast.error("Could not load transaction details");
+    } finally {
+      setLoading(false);
+    }
+  };
   useEffect(() => {
-    const fetchReceipt = async () => {
-      try {
-        const res = await api.get(`/receipts?product_id=${productId}`);
-        const data = Array.isArray(res.data.data)
-          ? res.data.data[0]
-          : res.data.data;
-        console.log(data);
-        setReceipt(data);
-      } catch (error) {
-        console.error("Failed to load receipt", error);
-        toast.error("Could not load transaction details");
-      } finally {
-        setLoading(false);
-      }
-    };
     if (productId) fetchReceipt();
   }, [productId]);
 
@@ -194,7 +194,11 @@ const CheckoutPage = () => {
       });
       scrollToBottom();
     });
-
+    socketRef.current.on("receipt_updated", (payload: any) => {
+      console.log("Receipt updated event received", payload);
+      if (payload.type === "RECEIPT_UPDATED")
+        fetchReceipt();
+    })
     return () => {
       socketRef.current?.removeAllListeners('new_transaction_message');
       socketRef.current?.disconnect();
@@ -214,7 +218,7 @@ const CheckoutPage = () => {
     try {
       const payload: any = {};
       if (type === "confirm_payment") payload.confirmed_by_seller = true;
-      if (type === "confirm_receipt") payload.confirmed_by_buyer = true;
+      if (type === "confirm_receipt") {payload.confirmed_by_buyer = true; payload.status = "FINISHED";};
 
       await api.put(`/receipts/${receipt.receipt_id}`, payload);
 
@@ -558,7 +562,7 @@ const CheckoutPage = () => {
                       Confirm Payment & Ship
                     </Button>
                   )}
-                {isOwner && receipt.status !== "CANCELED" && (
+                {isOwner && receipt.status !== "CANCELED" && receipt.status !== "FINISHED" && (
                   <Button
                     variant={"secondary"}
                     className="w-2/3 bg-red-500 hover:bg-red-600 text-white"
@@ -573,7 +577,7 @@ const CheckoutPage = () => {
                   !receipt.confirmed_by_buyer &&
                   receipt.status !== "CANCELED" && (
                     <Button
-                      disabled={!receipt.confirmed_by_buyer}
+                      disabled={Boolean(receipt.confirmed_by_buyer)}
                       className="w-2/3 bg-blue-600 hover:bg-blue-700"
                       onClick={() => handleUpdateStatus("confirm_receipt")}
                     >
