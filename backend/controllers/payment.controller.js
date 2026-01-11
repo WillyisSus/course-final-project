@@ -51,7 +51,7 @@ const paymentController = {
                 const productReceipt = await ProductReceiptService.getReceiptByProductId(product_id);
                 await productReceipt.update({ paid_by_buyer: true, paypal_order: orderID});
                 const io = req.app.get('io');
-                io.to(`transaction_${updatedReceipt.product_id}`).emit('receipt_updated', {
+                io.to(`transaction_${product_id}`).emit('receipt_updated', {
                     type: 'RECEIPT_UPDATED',
                 })
                 res.json({ status: 'FINISHED' });

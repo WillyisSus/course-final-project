@@ -174,11 +174,14 @@ export const ProductService = {
     if (product.seller_id !== sellerId) {
       throw new Error('Unauthorized: I can only update my own products');
     }
-
-    // preventing updates if someone has already bid, to keep it fair
-    const bidCount = await models.bids.count({ where: { product_id: productId } });
-    if (bidCount > 0) {
-      throw new Error('Cannot update product: Bids have already been placed');
+    if ((updateData.price_current && updateData.price_current != product.price_current )
+      || (updateData.price_start && updateData.price_start != product.price_start ) || 
+        (updateData.price_buy_now && updateData.price_buy_now != product.price_buy_now )) {
+      // preventing updates if someone has already bid, to keep it fair
+      const bidCount = await models.bids.count({ where: { product_id: productId } });
+      if (bidCount > 0) {
+        throw new Error('Cannot update product prices: Bids have already been placed');
+      }
     }
 
     // ensuring I don't accidentally set current price lower than start price if I change start price

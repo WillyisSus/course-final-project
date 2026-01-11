@@ -967,8 +967,8 @@ const ProductDetailPage = () => {
               </Badge>
             )}
           </div>
-
-          <BiddingSection
+          {isQualifiedToBid ? (
+             <BiddingSection
             startPrice={Number(product.price_start)}
             currentPrice={Number(product.price_current)}
             bidHistory={bidsHistory || []}
@@ -979,6 +979,10 @@ const ProductDetailPage = () => {
             isOwner={isOwner}
             onBlockBidder={handleRequestBlock}
           />
+          ): (
+            <div className="text-gray-500 bg-gray-50 w-full h-48 text-center content-center">You are not qualifed to view this section</div>
+          )}
+         
         </div>
       )}
 

@@ -48,6 +48,10 @@ const checkExpiredAuctions = async () => {
                         as: 'bidder', 
                         attributes: ['user_id', 'email', 'full_name'] 
                     }]
+                }, {
+                    model: models.users,
+                    as: 'seller',
+                    attributes: ['user_id', 'email', 'full_name']
                 }
             ],
             transaction
@@ -112,6 +116,20 @@ const checkExpiredAuctions = async () => {
             } else {
                 console.log(`Closing Product #${product.product_id}. No winner/bids.`);
                 await product.update({ status: 'EXPIRED' }, { transaction }); 
+            }
+            if (product.seller){
+                await sendEmail({
+                    to: product.seller.email,
+                    subject: `Your auction has ended: ${product.name}`,
+                    html: `
+                        <div style="font-family: sans-serif; padding: 20px;">
+                            <h3>Auction Ended</h3>
+                            <p>Your auction for <b>${product.name}</b> has ended.</p>
+                            <p>${product.winner ? `The winning bid was <b>$${Number(product.price_current).toLocaleString()}</b> by <b>${product.winner.full_name}</b>.` : 'Unfortunately, there were no bids placed on your auction.'}</p>
+                            <p>Please check your product receipts for further details.</p>
+                        </div>
+                    `
+                });
             }
         }
 

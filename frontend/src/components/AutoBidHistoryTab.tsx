@@ -94,7 +94,7 @@ const AutoBidHistoryTab = () => {
                     !isWinner &&
                     Number(item.product.price_current) >=
                       Number(item.max_price);
-                  const isSold = item.product.status === "SOLD";
+                  const isExpired = item.product.status === "EXPIRED";
 
                   return (
                     <TableRow key={item.auto_bid_id}>
@@ -108,11 +108,11 @@ const AutoBidHistoryTab = () => {
                         ₫{Number(item.product.price_current).toLocaleString()}
                       </TableCell>
                       <TableCell>
-                        {isSold && isWinner ? (
+                        {isExpired && isWinner ? (
                           <Badge className="bg-green-600 gap-1">
                             <CheckCircle className="w-3 h-3" /> Won
                           </Badge>
-                        ) : isSold && !isWinner ? (
+                        ) : isExpired && !isWinner ? (
                           <Badge variant="secondary" className="gap-1">
                             <XCircle className="w-3 h-3" /> Lost
                           </Badge>

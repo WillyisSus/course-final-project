@@ -113,13 +113,14 @@ export const AutoBidService = {
               }, { transaction: t }); 
 
           } else {
-  
+              // Bug when first bidder update a auto-bid lower then second bidder maxprice -> right price but wrong winner
+
               const newBidAmount = Math.min(
                   parseFloat(oldMaxPriceAutoBid.max_price),
                   parseFloat(maxPrice)
               );
-              const oldDate= new Date(oldMaxPriceAutoBid.created_at);
-              const newDate= new Date(newAutoBid.created_at);
+              const oldDate= new Date(oldMaxPriceAutoBid.updated_at);
+              const newDate= new Date(newAutoBid.updated_at);
 
               if (oldDate < newDate){
                   console.log("Placing new bid of amount:", newBidAmount, " of bidder:", oldMaxPriceAutoBid.bidder_id);
@@ -225,7 +226,8 @@ export const AutoBidService = {
     }
 
     return await autoBid.update({
-      max_price: newMaxPrice
+      max_price: newMaxPrice,
+      updated_at: new Date()
     });
   },
 

@@ -172,7 +172,6 @@ const BiddingSection = ({
               <Input
                 {...register("max_price", { valueAsNumber: true })}
                 type="number"
-                step={step}
                 className="bg-white h-12"
                 autoFocus
               />
