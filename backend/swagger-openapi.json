@@ -20,6 +20,10 @@
   ],
   "tags": [
     {
+      "name": "Health",
+      "description": "Service health endpoints"
+    },
+    {
       "name": "Authentication",
       "description": "User authentication and authorization endpoints"
     },
@@ -42,6 +46,34 @@
     {
       "name": "Messages",
       "description": "User messaging endpoints"
+    },
+    {
+      "name": "Watchlists",
+      "description": "User watchlist endpoints"
+    },
+    {
+      "name": "UpgradeRequests",
+      "description": "Account upgrade request endpoints"
+    },
+    {
+      "name": "Payments",
+      "description": "Payment processing endpoints"
+    },
+    {
+      "name": "Receipts",
+      "description": "Product receipts endpoints"
+    },
+    {
+      "name": "BlockedBidders",
+      "description": "Blocked bidders management endpoints"
+    },
+    {
+      "name": "Users",
+      "description": "User management endpoints"
+    },
+    {
+      "name": "Feedbacks",
+      "description": "User feedback endpoints"
     }
   ],
   "components": {
@@ -507,7 +539,7 @@
         }
       }
     },
-    "/api/auth/signup": {
+    "/api/auth/register": {
       "post": {
         "summary": "User Registration",
         "operationId": "signUp",
@@ -526,7 +558,7 @@
                   },
                   "password": {
                     "type": "string",
-                    "minLength": 6,
+                    "minLength": 8,
                     "example": "password123"
                   },
                   "full_name": {
@@ -542,9 +574,13 @@
                     "type": "string",
                     "format": "date",
                     "example": "1990-01-01"
+                  },
+                  "recaptcha_token": {
+                    "type": "string",
+                    "description": "Google reCAPTCHA token"
                   }
                 },
-                "required": ["email", "password", "full_name"]
+                "required": ["email", "password", "full_name", "recaptcha_token"]
               }
             }
           }
@@ -650,24 +686,9 @@
         "summary": "Refresh Access Token",
         "operationId": "refresh-token",
         "tags": ["Authentication"],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "user_id": {
-                    "type": "integer",
-                    "example": 1,
-                    "description": "User ID"
-                  }
-                },
-                "required": ["user_id"]
-              }
-            }
-          }
-        },
+        "security": [
+          { "BearerAuth": [] }
+        ],
         "responses": {
           "200": {
             "description": "Access token refreshed successfully",
@@ -679,13 +700,9 @@
                     "message": {
                       "type": "string"
                     },
-                    "newAccessToken": {
+                    "accessToken": {
                       "type": "string",
                       "description": "New JWT access token"
-                    },
-                    "id": {
-                      "type": "integer",
-                      "description": "User ID"
                     }
                   }
                 }
@@ -715,9 +732,99 @@
         }
       }
     },
+    "/api/auth/change-password": {
+      "put": {
+        "summary": "Change Password",
+        "operationId": "changePassword",
+        "tags": ["Authentication"],
+        "security": [ { "BearerAuth": [] } ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "old_password": { "type": "string", "minLength": 8 },
+                  "new_password": { "type": "string", "minLength": 8 }
+                },
+                "required": ["old_password", "new_password"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Password changed successfully" },
+          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "500": { "description": "Server error", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/api/auth/forgot-password": {
+      "post": {
+        "summary": "Request Password Reset",
+        "operationId": "forgotPassword",
+        "tags": ["Authentication"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object", "properties": { "email": { "type": "string", "format": "email" } }, "required": ["email"] }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Reset instructions sent" }, "400": { "description": "Invalid input", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }, "500": { "description": "Server error", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } } }
+      }
+    },
+    "/api/auth/reset-password": {
+      "post": {
+        "summary": "Reset Password",
+        "operationId": "resetPassword",
+        "tags": ["Authentication"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object", "properties": { "otp": { "type": "string" }, "email": { "type": "string", "format": "email" }, "new_password": { "type": "string", "minLength": 8 } }, "required": ["otp", "email", "new_password"] }
+            }
+          }
+        },
+        "responses": { "200": { "description": "Password reset successfully" }, "400": { "description": "Invalid input", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }, "500": { "description": "Server error", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } } }
+      }
+    },
+    "/api/auth/update-account": {
+      "put": {
+        "summary": "Update Account",
+        "operationId": "updateAccount",
+        "tags": ["Authentication"],
+        "security": [ { "BearerAuth": [] } ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "properties": { "address": { "type": "string" }, "full_name": { "type": "string" }, "email": { "type": "string", "format": "email" }, "dob": { "type": "string", "format": "date" } } } } }
+        },
+        "responses": { "200": { "description": "Account updated successfully" }, "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }, "500": { "description": "Server error", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } } }
+      }
+    },
+    "/api/auth/verify-otp": {
+      "post": {
+        "summary": "Verify OTP",
+        "operationId": "verifyOTP",
+        "tags": ["Authentication"],
+        "security": [ { "BearerAuth": [] } ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "otp": { "type": "string" } }, "required": ["otp"] } } } },
+        "responses": { "200": { "description": "Account verified successfully" }, "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }, "400": { "description": "Invalid OTP", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } } }
+      },
+      "get": {
+        "summary": "Send OTP",
+        "operationId": "sendOTP",
+        "tags": ["Authentication"],
+        "security": [ { "BearerAuth": [] } ],
+        "responses": { "200": { "description": "OTP sent" }, "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } } }
+      }
+    },
     "/api/products/": {
       "get": {
-        "summary": "Get All Active Products",
+        "summary": "Get Products",
         "operationId": "getAllProducts",
         "tags": ["Products"],
         "parameters": [
@@ -731,13 +838,10 @@
             }
           },
           {
-            "name": "offset",
+            "name": "page",
             "in": "query",
-            "description": "Number of products to skip",
-            "schema": {
-              "type": "integer",
-              "default": 0
-            }
+            "description": "Page number (starts at 1)",
+            "schema": { "type": "integer", "default": 1 }
           },
           {
             "name": "search",
@@ -765,6 +869,18 @@
               "enum": ["ASC", "DESC"],
               "default": "ASC"
             }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "description": "Filter by category ID",
+            "schema": { "type": "integer" }
+          },
+          {
+            "name": "seller_id",
+            "in": "query",
+            "description": "Filter by seller ID",
+            "schema": { "type": "integer" }
           },
           {
             "name": "status",
@@ -875,6 +991,15 @@
                     "type": "boolean",
                     "example": true
                   },
+                  "description": {
+                    "type": "string",
+                    "minLength": 10,
+                    "example": "A mint condition vintage camera."
+                  },
+                  "allow_first_time_bidder": {
+                    "type": "boolean",
+                    "example": true
+                  },
                   "images": {
                     "type": "array",
                     "maxItems": 4,
@@ -885,7 +1010,7 @@
                     "description": "Product images (max 4)"
                   }
                 },
-                "required": ["name", "category_id", "price_start", "price_step", "end_date", "images"]
+                "required": ["name", "category_id", "price_start", "price_step", "end_date", "description", "images"]
               }
             }
           }
@@ -950,6 +1075,25 @@
             }
           }
         }
+      }
+    },
+    "/api/products/admin": {
+      "get": {
+        "summary": "Admin: Get Products",
+        "operationId": "getProductsForAdmin",
+        "tags": ["Products"],
+        "security": [ { "BearerAuth": [] } ],
+        "parameters": [
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 10 } },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "search", "in": "query", "schema": { "type": "string" } },
+          { "name": "sort", "in": "query", "schema": { "type": "string", "default": "end_date" } },
+          { "name": "order", "in": "query", "schema": { "type": "string", "enum": ["ASC", "DESC"], "default": "ASC" } },
+          { "name": "category", "in": "query", "schema": { "type": "integer" } },
+          { "name": "seller_id", "in": "query", "schema": { "type": "integer" } },
+          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["ACTIVE", "ENDED", "SOLD"] } }
+        ],
+        "responses": { "200": { "description": "Products retrieved" }, "401": { "description": "Unauthorized" }, "403": { "description": "Forbidden" } }
       }
     },
     "/api/products/{id}": {
@@ -1210,7 +1354,7 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "userIdToBlock": {
+                  "user_id": {
                     "type": "integer",
                     "example": 5,
                     "description": "ID of user to block from bidding"
@@ -1221,7 +1365,7 @@
                     "description": "Reason for blocking"
                   }
                 },
-                "required": ["userIdToBlock", "reason"]
+                "required": ["user_id", "reason"]
               }
             }
           }
@@ -1279,6 +1423,27 @@
         }
       }
     },
+    "/api/products/{id}/description": {
+      "post": {
+        "summary": "Add Product Description",
+        "operationId": "addProductDescription",
+        "tags": ["Products"],
+        "security": [ { "BearerAuth": [] } ],
+        "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } } ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "content": { "type": "string", "minLength": 10 } }, "required": ["content"] } } } },
+        "responses": { "201": { "description": "Product description added" }, "400": { "description": "Invalid input" }, "401": { "description": "Unauthorized" } }
+      }
+    },
+    "/api/products/{id}/is-blocked": {
+      "get": {
+        "summary": "Check Bidder Blocked",
+        "operationId": "checkBidderBlocked",
+        "tags": ["Products"],
+        "security": [ { "BearerAuth": [] } ],
+        "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } } ],
+        "responses": { "200": { "description": "Block status retrieved" }, "401": { "description": "Unauthorized" } }
+      }
+    },
     "/api/categories/": {
       "get": {
         "summary": "Get All Categories",
@@ -1322,6 +1487,7 @@
         "summary": "Create Category",
         "operationId": "createCategory",
         "tags": ["Categories"],
+        "security": [ { "BearerAuth": [] } ],
         "requestBody": {
           "required": true,
           "content": {
@@ -1427,6 +1593,7 @@
         "summary": "Update Category",
         "operationId": "updateCategory",
         "tags": ["Categories"],
+        "security": [ { "BearerAuth": [] } ],
         "parameters": [
           {
             "name": "id",
@@ -1488,6 +1655,7 @@
         "summary": "Delete Category",
         "operationId": "deleteCategory",
         "tags": ["Categories"],
+        "security": [ { "BearerAuth": [] } ],
         "parameters": [
           {
             "name": "id",
@@ -1598,7 +1766,7 @@
           {
             "name": "product_id",
             "in": "query",
-            "description": "Filter by product ID (optional)",
+            "description": "Filter by product ID",
             "schema": {
               "type": "integer"
             }
@@ -2157,7 +2325,7 @@
         }
       }
     },
-    "/api/messages/conversation/{userId}": {
+    "/api/messages/conversation": {
       "get": {
         "summary": "Get Conversation with User",
         "operationId": "getConversation",
@@ -2168,15 +2336,8 @@
           }
         ],
         "parameters": [
-          {
-            "name": "userId",
-            "in": "path",
-            "required": true,
-            "description": "Other user ID",
-            "schema": {
-              "type": "integer"
-            }
-          }
+          { "name": "user_id", "in": "query", "required": true, "description": "Other user ID", "schema": { "type": "integer" } },
+          { "name": "product_id", "in": "query", "required": true, "description": "Product ID", "schema": { "type": "integer" } }
         ],
         "responses": {
           "200": {
@@ -2254,12 +2415,16 @@
                     "type": "integer",
                     "example": 2
                   },
+                  "product_id": {
+                    "type": "integer",
+                    "example": 1
+                  },
                   "content": {
                     "type": "string",
                     "example": "Hello, are you interested in this product?"
                   }
                 },
-                "required": ["receiver_id", "content"]
+                "required": ["receiver_id", "product_id", "content"]
               }
             }
           }
@@ -2390,6 +2555,81 @@
           }
         }
       }
+    }
+    ,
+    "/api/watchlists/": {
+      "get": {
+        "summary": "Get User Watchlist",
+        "operationId": "getWatchlist",
+        "tags": ["Watchlists"],
+        "security": [ { "BearerAuth": [] } ],
+        "responses": { "200": { "description": "Watchlist retrieved" }, "401": { "description": "Unauthorized" }, "500": { "description": "Server error" } }
+      },
+      "post": {
+        "summary": "Add to Watchlist",
+        "operationId": "addWatchlist",
+        "tags": ["Watchlists"],
+        "security": [ { "BearerAuth": [] } ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "product_id": { "type": "integer" } }, "required": ["product_id"] } } } },
+        "responses": { "201": { "description": "Added to watchlist" }, "400": { "description": "Invalid input" }, "401": { "description": "Unauthorized" }, "409": { "description": "Already in watchlist" } }
+      }
+    },
+    "/api/watchlists/{id}": {
+      "get": { "summary": "Check Product in Watchlist", "operationId": "getWatchlistItem", "tags": ["Watchlists"], "security": [ { "BearerAuth": [] } ], "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } } ], "responses": { "200": { "description": "Product is in watchlist" }, "404": { "description": "Not in watchlist" } } },
+      "delete": { "summary": "Remove from Watchlist", "operationId": "removeWatchlist", "tags": ["Watchlists"], "security": [ { "BearerAuth": [] } ], "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } } ], "responses": { "200": { "description": "Removed from watchlist" } } }
+    },
+    "/api/upgrade-requests/": {
+      "get": { "summary": "Admin: Get Upgrade Requests", "operationId": "getUpgradeRequests", "tags": ["UpgradeRequests"], "security": [ { "BearerAuth": [] } ], "parameters": [ { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["PENDING", "APPROVED", "REJECTED"] } } ], "responses": { "200": { "description": "Upgrade requests retrieved" }, "401": { "description": "Unauthorized" }, "403": { "description": "Forbidden" } } },
+      "post": { "summary": "Submit Upgrade Request", "operationId": "createUpgradeRequest", "tags": ["UpgradeRequests"], "security": [ { "BearerAuth": [] } ], "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "reason": { "type": "string", "minLength": 10 } }, "required": ["reason"] } } } }, "responses": { "201": { "description": "Upgrade request submitted" }, "401": { "description": "Unauthorized" }, "409": { "description": "Duplicate pending request" } } }
+    },
+    "/api/upgrade-requests/{id}": {
+      "put": { "summary": "Admin: Update Upgrade Request Status", "operationId": "updateUpgradeRequest", "tags": ["UpgradeRequests"], "security": [ { "BearerAuth": [] } ], "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } } ], "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "status": { "type": "string", "enum": ["APPROVED", "REJECTED"] } }, "required": ["status"] } } } }, "responses": { "200": { "description": "Request status updated" }, "401": { "description": "Unauthorized" }, "403": { "description": "Forbidden" }, "400": { "description": "Invalid status" } } },
+      "delete": { "summary": "Admin: Delete Upgrade Request", "operationId": "deleteUpgradeRequest", "tags": ["UpgradeRequests"], "security": [ { "BearerAuth": [] } ], "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } } ], "responses": { "200": { "description": "Upgrade request deleted" }, "401": { "description": "Unauthorized" }, "403": { "description": "Forbidden" } } }
+    },
+    "/api/payment/create-order": {
+      "post": { "summary": "Create PayPal Order", "operationId": "createOrder", "tags": ["Payments"], "security": [ { "BearerAuth": [] } ], "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "product_id": { "type": "integer" } }, "required": ["product_id"] } } } }, "responses": { "200": { "description": "Order created" }, "401": { "description": "Unauthorized" }, "404": { "description": "Receipt not found" }, "400": { "description": "Already paid" }, "500": { "description": "Failed to create order" } } }
+    },
+    "/api/payment/capture-order": {
+      "post": { "summary": "Capture PayPal Order", "operationId": "captureOrder", "tags": ["Payments"], "security": [ { "BearerAuth": [] } ], "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "orderID": { "type": "string" }, "product_id": { "type": "integer" } }, "required": ["orderID", "product_id"] } } } }, "responses": { "200": { "description": "Payment captured" }, "500": { "description": "Payment failed" } } }
+    },
+    "/api/receipts/": {
+      "get": { "summary": "Get Receipts", "operationId": "getReceipts", "tags": ["Receipts"], "security": [ { "BearerAuth": [] } ], "parameters": [ { "name": "product_id", "in": "query", "schema": { "type": "integer" } }, { "name": "role", "in": "query", "schema": { "type": "string", "enum": ["BIDDER", "SELLER", "ADMIN"] } } ], "responses": { "200": { "description": "Receipts retrieved" }, "400": { "description": "Bad request" }, "404": { "description": "Not found" }, "401": { "description": "Unauthorized" }, "403": { "description": "Forbidden" } } },
+      "post": { "summary": "Create Receipt (Buy Now)", "operationId": "createReceipt", "tags": ["Receipts"], "security": [ { "BearerAuth": [] } ], "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "product_id": { "type": "integer" } }, "required": ["product_id"] } } } }, "responses": { "201": { "description": "Receipt created" }, "400": { "description": "Invalid input or exists" }, "404": { "description": "Product not found" } } }
+    },
+    "/api/receipts/{id}": {
+      "get": { "summary": "Get Receipt by ID", "operationId": "getReceiptById", "tags": ["Receipts"], "security": [ { "BearerAuth": [] } ], "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } } ], "responses": { "200": { "description": "Receipt retrieved" }, "404": { "description": "Receipt not found" }, "403": { "description": "Access denied" } } },
+      "put": { "summary": "Update Receipt Status", "operationId": "updateReceipt", "tags": ["Receipts"], "security": [ { "BearerAuth": [] } ], "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } } ], "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "paid_by_buyer": { "type": "boolean" }, "confirmed_by_seller": { "type": "boolean" }, "confirmed_by_buyer": { "type": "boolean" }, "status": { "type": "string", "enum": ["PENDING", "FINISHED", "CANCELED"] }, "paypal_order": { "type": "string" } } } } } }, "responses": { "200": { "description": "Receipt updated" }, "403": { "description": "Unauthorized" } } }
+    },
+    "/api/blocked-bidders/": {
+      "get": { "summary": "Admin: Get All Blocked Entries", "operationId": "getAllBlocked", "tags": ["BlockedBidders"], "security": [ { "BearerAuth": [] } ], "responses": { "200": { "description": "Blocked entries retrieved" }, "401": { "description": "Unauthorized" }, "403": { "description": "Forbidden" } } }
+    },
+    "/api/blocked-bidders/bidders": {
+      "get": { "summary": "Get Blocked Bidders by Current Seller", "operationId": "getBlockedBySeller", "tags": ["BlockedBidders"], "security": [ { "BearerAuth": [] } ], "responses": { "200": { "description": "Blocked bidders retrieved" }, "401": { "description": "Unauthorized" } } }
+    },
+    "/api/blocked-bidders/products": {
+      "get": { "summary": "Get Blocked Products for Current Bidder", "operationId": "getBlockedProducts", "tags": ["BlockedBidders"], "security": [ { "BearerAuth": [] } ], "responses": { "200": { "description": "Blocked products retrieved" }, "401": { "description": "Unauthorized" } } }
+    },
+    "/api/blocked-bidders/unblock-bidder": {
+      "post": { "summary": "Unblock Bidder for Product", "operationId": "unblockBidder", "tags": ["BlockedBidders"], "security": [ { "BearerAuth": [] } ], "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "user_id": { "type": "integer" }, "product_id": { "type": "integer" } }, "required": ["user_id", "product_id"] } } } }, "responses": { "200": { "description": "Bidder unblocked" }, "401": { "description": "Unauthorized" }, "400": { "description": "Invalid input" } } }
+    },
+    "/api/users/": {
+      "get": { "summary": "Admin: Get All Users", "operationId": "getUsers", "tags": ["Users"], "security": [ { "BearerAuth": [] } ], "responses": { "200": { "description": "Users retrieved" }, "401": { "description": "Unauthorized" }, "403": { "description": "Forbidden" } } },
+      "post": { "summary": "Admin: Create User", "operationId": "createUser", "tags": ["Users"], "security": [ { "BearerAuth": [] } ], "responses": { "201": { "description": "User created" }, "401": { "description": "Unauthorized" }, "403": { "description": "Forbidden" } } }
+    },
+    "/api/users/account": {
+      "get": { "summary": "Get Current Account", "operationId": "getAccount", "tags": ["Users"], "security": [ { "BearerAuth": [] } ], "responses": { "200": { "description": "Account retrieved" }, "401": { "description": "Unauthorized" } } }
+    },
+    "/api/users/{id}": {
+      "get": { "summary": "Get User by ID", "operationId": "getUserById", "tags": ["Users"], "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } } ], "responses": { "200": { "description": "User retrieved" }, "404": { "description": "User not found" } } },
+      "put": { "summary": "Admin: Update User", "operationId": "updateUser", "tags": ["Users"], "security": [ { "BearerAuth": [] } ], "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } } ], "responses": { "200": { "description": "User updated" }, "401": { "description": "Unauthorized" }, "403": { "description": "Forbidden" } } },
+      "delete": { "summary": "Admin: Delete User", "operationId": "deleteUser", "tags": ["Users"], "security": [ { "BearerAuth": [] } ], "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } } ], "responses": { "200": { "description": "User deleted" }, "401": { "description": "Unauthorized" }, "403": { "description": "Forbidden" } } }
+    },
+    "/api/users/{id}/reset-password": {
+      "put": { "summary": "Admin: Reset User Password", "operationId": "adminResetPassword", "tags": ["Users"], "security": [ { "BearerAuth": [] } ], "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } } ], "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "new_password": { "type": "string", "minLength": 8 } }, "required": ["new_password"] } } } }, "responses": { "200": { "description": "Password reset" }, "401": { "description": "Unauthorized" }, "403": { "description": "Forbidden" } } }
+    },
+    "/api/feedbacks/": {
+      "get": { "summary": "Get Feedbacks for User", "operationId": "getFeedbacks", "tags": ["Feedbacks"], "parameters": [ { "name": "user_id", "in": "query", "required": true, "schema": { "type": "integer" } } ], "responses": { "200": { "description": "Feedbacks retrieved" }, "400": { "description": "Invalid input" } } },
+      "post": { "summary": "Create Feedback", "operationId": "createFeedback", "tags": ["Feedbacks"], "security": [ { "BearerAuth": [] } ], "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "product_id": { "type": "integer" }, "to_user_id": { "type": "integer" }, "rating": { "type": "integer", "minimum": -1, "maximum": 1 }, "comment": { "type": "string" } }, "required": ["product_id", "to_user_id", "rating"] } } } }, "responses": { "201": { "description": "Feedback submitted" }, "403": { "description": "Forbidden" } } }
     }
   }
 }
