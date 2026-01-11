@@ -4,7 +4,7 @@ filebeat.inputs:
     enabled: true
     paths:
       # This is the guaranteed accessible path inside the container
-      - /var/log/app/*.gz
+      - /var/log/app/*.log
 
     # IMPORTANT: Use the JSON processor for your Winston logs
     json.keys_under_root: true

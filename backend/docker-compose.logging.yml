@@ -3,9 +3,10 @@ services:
   logstash:
     image: docker.elastic.co/logstash/logstash:8.12.0
     container_name: logstash
-    # Mount the simple logstash config file
     volumes:
       - ./config/logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
+      - ./logs:/usr/share/logstash/ingest_data
+      
     ports:
       - "5044:5044"
     environment:
