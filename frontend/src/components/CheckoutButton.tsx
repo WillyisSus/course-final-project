@@ -20,8 +20,9 @@ const CheckoutButton = ({
   // Configuration for the PayPal SDK
   const initialOptions = {
     // REPLACE THIS with your actual Sandbox Client ID from developer.paypal.com
-    clientId:
-      "Abq0Ui9c09fNJmCsd6ksRKnyUdd-wzXV5Nt5ytnVjnwJEkjH8sug8wxWlLKjj6QNHhk37jXYJHoeFv6L",
+    // clientId:
+    //   "Abq0Ui9c09fNJmCsd6ksRKnyUdd-wzXV5Nt5ytnVjnwJEkjH8sug8wxWlLKjj6QNHhk37jXYJHoeFv6L",
+    clientId: import.meta.env.VITE_PAYPAL_CLIENT_ID,
     currency: "USD",
     intent: "capture",
   };
