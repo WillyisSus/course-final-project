@@ -1,6 +1,8 @@
 import {AutoBidService} from '../services/autobids.service.js';
 import { BidService } from '../services/bids.service.js';
 import { ProductService } from '../services/product.service.js';
+import { UserService } from '../services/user.service.js';
+import { emailTemplates, sendEmail } from '../utils/email.js';
 const autoBidController = {
     // GET /api/auto-bids?product_id=123
     getAll: async (req, res) => {
@@ -49,6 +51,13 @@ const autoBidController = {
             const bidderId = req.user?.user_id || 1; // From auth middleware
             const { product_id, max_price } = req.body;
             const newAutoBid = await AutoBidService.createAutoBid(product_id, bidderId, max_price);
+            const product = await ProductService.findProductById(product_id);
+            if (!product) {
+                return res.status(404).json({ message: "Product not found" });
+            }
+            let oldWinner = null;
+            if (product.winner_id)
+                oldWinner = await UserService.findUserById(product.winner_id);
             if (newAutoBid){
                 const resData = {};
                 resData.autoBid = newAutoBid;
@@ -56,12 +65,18 @@ const autoBidController = {
                 if (calculateNewBids){
                     resData.bidUpdates = calculateNewBids;
                     const updatedProduct = await ProductService.findProductDetail(product_id);
+                    const newWinner = await UserService.findUserById(updatedProduct.winner_id)
+                    const onTopEmail = emailTemplates.onTopAuctionNotification(newWinner.full_name, updatedProduct.name, calculateNewBids.amount, product_id);
+                    await sendEmail({to: newWinner.email, subject: onTopEmail.subject, html: onTopEmail.html})
+                    if (oldWinner && oldWinner.user_id !== updatedProduct.winner_id){
+                        const outbidEmail = emailTemplates.outBidAuctionNotification(oldWinner.full_name, updatedProduct.name, calculateNewBids.amount, product_id);
+                        await sendEmail({to: oldWinner.email, subject: outbidEmail.subject, html: outbidEmail.html})
+                    }
                     const io = req.app.get('io')
                     io.to(`product_${product_id}`).emit('product_updated', {
                         type: 'BID_PLACED',
                         data: {
                             product: updatedProduct,
-                            newBid: calculateNewBids
                         }
                     });
                 }
@@ -84,17 +99,26 @@ const autoBidController = {
             const { max_price } = req.body;
 
             const updatedAutoBid = await AutoBidService.updateAutoBid(autoBidId, bidderId, max_price);
+            const oldProductData = await ProductService.findProductById(updatedAutoBid.product_id);
+            let oldWinner = null;
+            if (oldProductData.winner_id)
+                oldWinner = await UserService.findUserById(oldProductData.winner_id);
             if (updatedAutoBid){
                 const calculateNewBids = await AutoBidService.calculateAutoBids(updatedAutoBid.product_id, bidderId, max_price);
                 if (calculateNewBids){
-                    const newBidPlaced = await BidService.findBidDetail(calculateNewBids.bid_id);
                     const updatedProduct = await ProductService.findProductDetail(updatedAutoBid.product_id);
+                    const newWinner = await UserService.findUserById(updatedProduct.winner_id)
+                    const onTopEmail = emailTemplates.onTopAuctionNotification(newWinner.full_name, updatedProduct.name, calculateNewBids.amount, updatedAutoBid.product_id);
+                    await sendEmail({to: newWinner.email, subject: onTopEmail.subject, html: onTopEmail.html})
+                    if (oldWinner.user_id !== updatedProduct.winner_id){
+                        const outbidEmail = emailTemplates.outBidAuctionNotification(oldWinner.full_name, updatedProduct.name, calculateNewBids.amount, updatedAutoBid.product_id);
+                        await sendEmail({to: oldWinner.email, subject: outbidEmail.subject, html: outbidEmail.html})
+                    }
                     const io = req.app.get('io')
                     io.to(`product_${updatedAutoBid.product_id}`).emit('product_updated', {
                         type: 'BID_PLACED',
                         data: {
                             product: updatedProduct,
-                            newBid: newBidPlaced
                         }
                     });
                 }

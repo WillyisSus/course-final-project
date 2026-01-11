@@ -300,10 +300,11 @@ const CheckoutPage = () => {
   const priceUSD = (finalPrice / EXCHANGE_RATE).toFixed(2);
   const onRatingSubmit = async (data: RatingFormValues) => {
     try {
-      await api.post(`/ratings`, {
-        rated_user_id: partnerId,
-        rating_type: data.rating_type,
-        reason: data.reason,
+      await api.post(`/feedbacks`, {
+        product_id: receipt?.product_id,
+        to_user_id: partnerId,
+        rating: data.rating_type === "GOOD" ? "1" : "-1",
+        comment: data.reason,
       });
       
       toast.success("Rating submitted successfully!");

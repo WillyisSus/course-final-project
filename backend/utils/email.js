@@ -174,7 +174,53 @@ export const emailTemplates = {
     `
   }),
 
-  // K. Password Reset by Admin
+  // K. New Description Added to Product
+  newDescriptionNotification: (userName, productName, productId) => ({
+    subject: `New Description Added: ${productName}`,
+    html: `
+      <div style="font-family: sans-serif; padding: 20px;">
+        <h2>Product Description Updated</h2>
+        <p>Hi ${userName},</p>
+        <p>The seller has added a new description to <b>${productName}</b> that you were bidding on.</p>
+        <p>Click the button below to view the updated product details:</p>
+        <a href="http://localhost:5173/products/${productId}" style="background: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0;">View Updated Product</a>
+        <p>This description update may contain important information about the product's condition or specifications.</p>
+      </div>
+    `
+  }),
+
+  // L. On Top Auction Notification
+  onTopAuctionNotification: (userName, productName, currentBid, productId) => ({
+    subject: `You're the Top Bidder on ${productName}! 🏆`,
+    html: `
+      <div style="font-family: sans-serif; padding: 20px;">
+        <h2>🏆 You're the Top Bidder!</h2>
+        <p>Hi ${userName},</p>
+        <p>Great news! Your bid of <b>$${currentBid}</b> is currently the highest bid on <b>${productName}</b>.</p>
+        <p>Keep an eye on this auction to ensure you remain the top bidder:</p>
+        <a href="http://localhost:5173/products/${productId}" style="background: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0;">View Auction</a>
+        <p>Good luck with your bid! You may receive another notification if someone outbids you.</p>
+      </div>
+    `
+  }),
+
+  // M. Out Bid Auction Notification
+  outBidAuctionNotification: (userName, productName, newHighBid, productId) => ({
+    subject: `You've Been Outbid on ${productName}`,
+    html: `
+      <div style="font-family: sans-serif; padding: 20px;">
+        <h2>You've Been Outbid 📉</h2>
+        <p>Hi ${userName},</p>
+        <p>Unfortunately, you've been outbid on <b>${productName}</b>.</p>
+        <p>The new highest bid is now <b>$${newHighBid}</b>.</p>
+        <p>Click the button below to place a new bid and get back in the race:</p>
+        <a href="http://localhost:5173/products/${productId}" style="background: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0;">Place New Bid</a>
+        <p>Time is running out! Don't miss your chance to win this item.</p>
+      </div>
+    `
+  }),
+
+  // N. Password Reset by Admin
   resetPasswordByAdmin: (userName, newPassword) => ({
     subject: "Your BigBiddie Password Has Been Reset",
     html: `

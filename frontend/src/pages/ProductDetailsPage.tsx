@@ -191,6 +191,7 @@ const ProductDetailPage = () => {
         if (
           !(res.data.data as Product).allow_first_time_bidder &&
           (res.data.data as Product).seller_id !== user?.user_id
+          && user?.role !== "ADMIN"
         ) {
           console.log("First time bidders are not allowed for this product.");
           const userBids = await api
@@ -250,23 +251,20 @@ const ProductDetailPage = () => {
   useEffect(() => {
     if (isDescModalOpen) descForm.reset();
   }, [isDescModalOpen, descForm]);
-
+  const fetchBidsHistory = async () => {
+    try {
+      ``;
+      const res = await api.get(`/bids?product_id=${id}`);
+      setBidsHistory(res.data.data);
+    } catch (error) {
+      console.error("Failed to load bids history", error);
+      setBidsHistory([]);
+    }
+  };
   useEffect(() => {
-    const fetchBidsHistory = async () => {
-      try {
-        ``;
-        const res = await api.get(`/bids?product_id=${id}`);
-        setBidsHistory(res.data.data);
-      } catch (error) {
-        console.error("Failed to load bids history", error);
-        setBidsHistory([]);
-      }
-    };
     if (id) fetchBidsHistory();
   }, [id]);
-
-  useEffect(() => {
-    const fetchComments = async () => {
+  const fetchComments = async () => {
       try {
         const res = await api.get(`/comments?product_id=${id}`);
         setComments([...res.data.data]);
@@ -275,19 +273,22 @@ const ProductDetailPage = () => {
         console.error("Failed to load current comment", error);
         setComments([]);
       }
-    };
+  };
+  useEffect(() => {
+    
     if (id) fetchComments();
   }, [id]);
+  const fetchCurrentAutoBid = async () => {
+    try {
+      const res = await api.get(`/auto-bids?product_id=${id}`);
+      setCurrentAutoBid(res.data.data[0] || null);
+    } catch (error) {
+      console.error("Failed to load current auto bid", error);
+      setCurrentAutoBid(null);
+    }
+  };
   useEffect(() => {
-    const fetchCurrentAutoBid = async () => {
-      try {
-        const res = await api.get(`/auto-bids?product_id=${id}`);
-        setCurrentAutoBid(res.data.data[0] || null);
-      } catch (error) {
-        console.error("Failed to load current auto bid", error);
-        setCurrentAutoBid(null);
-      }
-    };
+    
     if (id) fetchCurrentAutoBid();
   }, [id]);
 
@@ -325,8 +326,8 @@ const ProductDetailPage = () => {
 
       if (payload.type === "BID_PLACED") {
         setProduct(payload.data?.product);
-        if (payload.data.newBid) {
-          setBidsHistory((prev) => [payload.data.newBid, ...prev]);
+        if (payload.data?.product) {
+          fetchBidsHistory();
         }
         setPriceChanged(true);
         setTimeout(() => setPriceChanged(false), 2000);
@@ -407,16 +408,17 @@ const ProductDetailPage = () => {
       if (product.price_buy_now && amount >= Number(product.price_buy_now)) {
         setIsBuyNowModalOpen(true);
       } else if (currentAutoBid) {
-        const payload: CreateBid = { max_price: amount * 1000 };
+        const payload: CreateBid = { max_price: amount};
         await api.put(`/auto-bids/${currentAutoBid.auto_bid_id}`, payload);
         toast.success("Bid updated successfully!");
       } else {
         const payload: CreateBid = {
           product_id: Number(id),
-          max_price: amount * 1000,
+          max_price: amount,
         };
         await api.post("/auto-bids", payload);
         toast.success("Bid placed successfully!");
+        fetchBidsHistory();
       }
       // No need to manually refresh product here; socket handles it!
     } catch (error: any) {

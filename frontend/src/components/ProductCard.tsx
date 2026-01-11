@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import { useSelector } from "react-redux";
 import api from "@/lib/axios";
 import { type Product } from "../types/product";
-import { Clock, Calendar, Baby, Heart } from "lucide-react";
+import { Clock, Calendar, Baby } from "lucide-react";
 
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -45,26 +45,7 @@ interface ProductCardProps {
 }
 
 export const ProductCard = ({ product }: ProductCardProps) => {
-  const { user } = useSelector((state: any) => state.auth);
-  const [isFavorite, setIsFavorite] = useState(false);
   const timeLeft = getTimeLeft(product.end_date);
-
-  useEffect(() => {
-    if (user) {
-        const checkFavorite = async () => {
-            try {
-                const res = await api.get(`/watchlists`);
-                const favorites = res.data.data || [];
-                const found = favorites.some((item: any) => item.product_id === product.product_id);
-                setIsFavorite(found);
-            } catch (error) {
-                console.error("Failed to check favorite status", error);
-            }
-        };
-        checkFavorite();
-    }
-  }, [user, product.product_id]);
-
   return (
     <Link
       to={`/products/${product.product_id}`}
@@ -90,14 +71,6 @@ export const ProductCard = ({ product }: ProductCardProps) => {
               <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white border-0 gap-1 shadow-sm px-2 py-0.5 text-[10px] sm:text-xs">
                 <Baby className="w-3 h-3" /> Newbie Friendly
               </Badge>
-            </div>
-          )}
-
-          {isFavorite && (
-            <div className="absolute top-2 right-2 z-10">
-               <div className="bg-white/90 backdrop-blur-sm p-1.5 rounded-full shadow-sm">
-                  <Heart className="w-4 h-4 text-red-500 fill-current" />
-               </div>
             </div>
           )}
 

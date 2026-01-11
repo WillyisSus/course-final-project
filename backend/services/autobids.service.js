@@ -50,7 +50,10 @@ export const AutoBidService = {
           transaction: t,
           lock: true
       });
-
+      if (product.winner_id === newBidderId){
+          console.log("New bidder is already the highest bidder, no need to calculate auto-bids.");
+          return null;
+      }
       if (!product) throw new Error("Product not found");
       // Find current highest bid of product
       const highestBid = await models.bids.findOne({

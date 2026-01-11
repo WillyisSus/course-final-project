@@ -188,7 +188,16 @@ const productController = {
             if (!content) {
                 return res.status(400).json({ message: "Description content is required" });
             }
+            const product = await ProductService.findProductById(productId);
+            if (!product) {
+                return res.status(404).json({ message: "Product not found" });
+            }
             const result = await ProductDescriptionService.createDescription(productId, sellerId, content);
+            const winner = await UserService.findUserById(product.winner_id)
+            if (winner) {
+                const {subject, html} = emailTemplates.newDescriptionNotification(winner.full_name, product.name, productId)
+                await sendEmail({to: winner.email, subject, html})
+            }
             res.status(201).json({ message: "Product description added", data: result });
         }
         catch (error) {
